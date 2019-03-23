@@ -1,12 +1,10 @@
 from keras.models import Model
 import six
-from keras.layers import Input, Concatenate, Conv2D,
-)
+from keras.layers import Input, Concatenate, Conv2D
 from keras import backend as K
 from functools import partial
 from capsnets_laseg.models import model_utils
 from capsnets_laseg.models.capsnets import CapsNetR3, CapsNetBasic
-
 
 class AdaptiveUNet(model_utils.AdaptiveNetwork):
     """
@@ -199,7 +197,3 @@ class U_CapsNet(object):
             train_model, eval_model = CapsNetBasic(self.input_shape, n_class = 2, decoder = self.decoder, add_noise = False, \
                                       input_layer = model)
         return train_model, eval_model
-
-# ucaps = U_CapsNet(input_shape = (256, 320, 1), n_class = 2, decoder = False)
-# model = ucaps.build_model(model_layer = 'simple', capsnet_type = 'basic')[0]
-# model.summary()
