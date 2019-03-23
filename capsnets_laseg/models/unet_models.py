@@ -1,7 +1,6 @@
 from keras.models import Model
 import six
 from keras.layers import Input, Concatenate, Conv2D,
-)
 from keras import backend as K
 from functools import partial
 from capsnets_laseg.models import model_utils
