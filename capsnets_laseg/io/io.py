@@ -50,7 +50,8 @@ class LocalPreprocessingBinarySeg(object):
         for id in data_ids:
             image, label = nib.load(join(images_path, id)), nib.load(join(labels_path, id))
             orig_spacing = image.header['pixdim'][1:4]
-            preprocessed_img, preprocessed_label = self.preprocess_fn(image, label, orig_spacing)
+            preprocessed_img, preprocessed_label = isensee_preprocess(image, label, orig_spacing, get_coords = False, ct = self.ct, \
+                                              mean_patient_shape = self.mean_patient_shape)
             out_fnames = self.save_imgs(preprocessed_img, preprocessed_label, id)
             print(out_fnames)
 
@@ -78,20 +79,3 @@ class LocalPreprocessingBinarySeg(object):
         raw_id = id.split(".")[0] # gets rid of file stem
         np.save(os.path.join(out_images_dir, raw_id), image), np.save(os.path.join(out_labels_dir, raw_id), mask)
         return "Saved: " + raw_id
-
-    def preprocess_fn(self, input_image, mask, orig_spacing):
-        """
-        Wrapper around the `io_utils.isensee_preprocess` function
-
-        Args:
-            input_image: Nifti1 Image
-            mask: Nifti1 Image
-            task_path: file path to the task directory (must have the corresponding "dataset.json" in it)
-            get_coords: boolean on whether to return extraction coords or not
-        Returns:
-            preprocessed input image and mask
-        """
-        input_image, mask = nii_to_np(input_image), nii_to_np(mask)
-        x, y = isensee_preprocess(input_image, mask, orig_spacing, get_coords = False, ct = self.ct, \
-                                  mean_patient_shape = self.mean_patient_shape)
-        return (x,y)
