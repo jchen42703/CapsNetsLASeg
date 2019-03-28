@@ -50,7 +50,8 @@ class LocalPreprocessingBinarySeg(object):
         for id in data_ids:
             image, label = nib.load(join(images_path, id)), nib.load(join(labels_path, id))
             orig_spacing = image.header['pixdim'][1:4]
-            preprocessed_img, preprocessed_label = self.preprocess_fn(image, label, orig_spacing)
+            preprocessed_img, preprocessed_label = isensee_preprocess(image, label, orig_spacing, get_coords = False, ct = self.ct, \
+                                              mean_patient_shape = self.mean_patient_shape)
             out_fnames = self.save_imgs(preprocessed_img, preprocessed_label, id)
             print(out_fnames)
 
@@ -78,43 +79,3 @@ class LocalPreprocessingBinarySeg(object):
         raw_id = id.split(".")[0] # gets rid of file stem
         np.save(os.path.join(out_images_dir, raw_id), image), np.save(os.path.join(out_labels_dir, raw_id), mask)
         return "Saved: " + raw_id
-
-    def preprocess_fn(self, input_image, mask, orig_spacing, get_coords = False):
-        """
-        Order:
-        1) Cropping to non-zero regions
-        2) Resampling to the median voxel spacing of the respective dataset
-        3) Normalization
-
-        Args:
-            input_image:
-            mask:
-            task_path: file path to the task directory (must have the corresponding "dataset.json" in it)
-            mean_patient_shape: obtained from Table 1. in the nnU-Net paper
-            get_coords: boolean on whether to return extraction coords or not
-        Returns:
-            preprocessed input image and mask
-        """
-        input_image, mask = self._nii_to_np(input_image), self._nii_to_np(mask)
-        # 1. Cropping
-        if get_coords:
-            extracted_img, extracted_mask, coords = extract_nonint_region(input_image, mask = mask, outside_value = 0, coords = get_coords)
-        elif not get_coords:
-            extracted_img, extracted_mask = extract_nonint_region(input_image, mask = mask, outside_value = 0, coords = False)
-        # 2. Resampling
-        transposed_spacing = orig_spacing[::-1] # doing so because turning into numpy array moves the batch dimension to axis 0
-        med_spacing = [np.median(transposed_spacing) for i in range(3)]
-        resamp_img = resample_array(extracted_img, transposed_spacing, med_spacing, is_label = False)
-        resamp_label = resample_array(extracted_mask, transposed_spacing, med_spacing, is_label = True)
-        # 3. Normalization
-        norm_img = zscore_isensee(resamp_img, ct = self.ct, mean_patient_shape = self.mean_patient_shape)
-        if get_coords:
-            return (norm_img, resamp_label, coords)
-        elif not get_coords:
-            return (norm_img, resamp_label)
-
-    def _nii_to_np(self, nib_img):
-        """
-        Converts a 3D nifti image to a numpy array of (z, x, y) dims
-        """
-        return np.transpose(nib_img.get_fdata(), [-1, 0, 1])
