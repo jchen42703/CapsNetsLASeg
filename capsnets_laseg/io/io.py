@@ -79,42 +79,19 @@ class LocalPreprocessingBinarySeg(object):
         np.save(os.path.join(out_images_dir, raw_id), image), np.save(os.path.join(out_labels_dir, raw_id), mask)
         return "Saved: " + raw_id
 
-    def preprocess_fn(self, input_image, mask, orig_spacing, get_coords = False):
+    def preprocess_fn(self, input_image, mask, orig_spacing):
         """
-        Order:
-        1) Cropping to non-zero regions
-        2) Resampling to the median voxel spacing of the respective dataset
-        3) Normalization
+        Wrapper around the `io_utils.isensee_preprocess` function
 
         Args:
-            input_image:
-            mask:
+            input_image: Nifti1 Image
+            mask: Nifti1 Image
             task_path: file path to the task directory (must have the corresponding "dataset.json" in it)
-            mean_patient_shape: obtained from Table 1. in the nnU-Net paper
             get_coords: boolean on whether to return extraction coords or not
         Returns:
             preprocessed input image and mask
         """
-        input_image, mask = self._nii_to_np(input_image), self._nii_to_np(mask)
-        # 1. Cropping
-        if get_coords:
-            extracted_img, extracted_mask, coords = extract_nonint_region(input_image, mask = mask, outside_value = 0, coords = get_coords)
-        elif not get_coords:
-            extracted_img, extracted_mask = extract_nonint_region(input_image, mask = mask, outside_value = 0, coords = False)
-        # 2. Resampling
-        transposed_spacing = orig_spacing[::-1] # doing so because turning into numpy array moves the batch dimension to axis 0
-        med_spacing = [np.median(transposed_spacing) for i in range(3)]
-        resamp_img = resample_array(extracted_img, transposed_spacing, med_spacing, is_label = False)
-        resamp_label = resample_array(extracted_mask, transposed_spacing, med_spacing, is_label = True)
-        # 3. Normalization
-        norm_img = zscore_isensee(resamp_img, ct = self.ct, mean_patient_shape = self.mean_patient_shape)
-        if get_coords:
-            return (norm_img, resamp_label, coords)
-        elif not get_coords:
-            return (norm_img, resamp_label)
-
-    def _nii_to_np(self, nib_img):
-        """
-        Converts a 3D nifti image to a numpy array of (z, x, y) dims
-        """
-        return np.transpose(nib_img.get_fdata(), [-1, 0, 1])
+        input_image, mask = nii_to_np(input_image), nii_to_np(mask)
+        x, y = isensee_preprocess(input_image, mask, orig_spacing, get_coords = False, ct = self.ct, \
+                                  mean_patient_shape = self.mean_patient_shape)
+        return (x,y)
