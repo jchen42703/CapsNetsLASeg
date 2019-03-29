@@ -11,8 +11,7 @@ class Transformed2DGenerator(BaseTransformGenerator):
     """
     Loads data, slices them based on the number of positive slice indices and applies data augmentation with `batchgenerators.transforms`.
     * Supports channels_last
-    * Loads data WITH nibabel instead of SimpleITK
-        * .nii files should not have the batch_size dimension
+    * .nii files should not have the batch_size dimension
 
     Attributes:
         list_IDs: list of filenames
@@ -26,16 +25,22 @@ class Transformed2DGenerator(BaseTransformGenerator):
         max_patient_shape: a tuple representing the maximum patient shape in a dataset; i.e. ((z,)x,y)
             * Note: If you have 3D medical images and want 2D slices and don't want to overpad the slice dimension (z),
             provide a shape that is only 2D (x,y).
+        n_workers:
+        pos_mask: boolean representing whether or not output the positive masks (X*Y)
+            * If True, inputs are for capsule networks with a decoder.
+            * If False, inputs are for everything else.
         shuffle: boolean
     """
     def __init__(self, list_IDs, data_dirs, batch_size, n_channels, n_classes, ndim,
-                n_pos, transform = None, max_patient_shape = None, n_workers = 1, shuffle = True):
+                n_pos, transform = None, max_patient_shape = None, n_workers = 1, pos_mask = True,
+                shuffle = True):
 
         BaseTransformGenerator.__init__(self, list_IDs = list_IDs, data_dirs = data_dirs, batch_size = batch_size,
                                n_channels = n_channels, n_classes = n_classes, ndim = ndim,
                                transform = transform, max_patient_shape = max_patient_shape,
                                n_workers = n_workers, shuffle = shuffle)
         self.n_pos = n_pos
+        self.pos_mask = pos_mask
         if n_pos == 0:
             print("WARNING! Your data is going to be randomly sliced.")
             self.mode = "rand"
@@ -54,7 +59,10 @@ class Transformed2DGenerator(BaseTransformGenerator):
         Args:
             idx: the id assigned to each worker
         Returns:
+        if self.pos_mask is True:
             (X,Y): a batch of transformed data/labels based on the n_pos attribute.
+        elif self.pos_mask is False:
+            ([X, Y], [Y, pos_mask]): multi-inputs for the capsule network decoder
         """
         # file names
         max_n_idx = (idx + 1) * self.batch_size
@@ -86,7 +94,11 @@ class Transformed2DGenerator(BaseTransformGenerator):
             X, Y = self.apply_transform(X, Y)
         # print("Getting item of size: ", indexes.size, "out of ", self.indexes.size, "with idx: ", idx, "\nX shape: ", X.shape)
         assert X.shape[0] == self.batch_size, "The outputted batch doesn't match the batch size."
-        return (X, Y)
+        if self.pos_mask:
+            pos_mask = X * Y
+            return ([X, Y], [Y, pos_mask])
+        elif not self.pos_mask:
+            return (X, Y)
 
     def data_gen(self, list_IDs_temp, pos_sample):
         """
@@ -130,52 +142,4 @@ class Transformed2DGenerator(BaseTransformGenerator):
             images_x.append(x_train[slice_idx]), images_y.append(y_train[slice_idx])
 
         input_data, seg_masks = np.stack(images_x), np.stack(images_y)
-        return (input_data, seg_masks)
-
-    def load_data(self, batchwise = True):
-        """
-        ** NOTE THIS METHOD IS DEPRECATED; Please refer to the inference package and the evaluation_generators.
-        Loads all data from given files and directory in two numpy arrays representing the inputs and labels
-        (Mainly used for evaluation)
-        * Note: Basically the same as self.data_gen except there is no slice extraction, just loading padded full images
-        Args:
-            batchwise: boolean on whether to return batched outputs or vertically stacked outputs depending on how you want to evaluate your inputs
-                * Note: batchwise evaluation would be done if you calculate the metrics for each batch and get the mean (2D/3D)
-                        samplewise evaluation would be done if you calculate the metrics for each individual 2D slice (2D only)
-        Returns:
-            inputs: with shape (n_batches, x, y, z, n_channels) or (n_samples, x, y, n_channels)
-            labels: same shape as inputs
-        """
-        images_x = []
-        images_y = []
-        for id in self.list_IDs:
-            # loads data as a numpy arr and then changes the type to float32
-            x_train = load_data(os.path.join(self.data_dirs[0], id))
-            y_train = load_data(os.path.join(self.data_dirs[1], id))
-            if not x_train.shape[-1] == self.n_channels:
-                # Adds channel in case there is no channel dimension
-                x_train = add_channel(x_train)
-            if not y_train.shape[-1] == self.n_channels:
-                # Adds channel in case there is no channel dimension
-                y_train = add_channel(y_train)
-
-            if self.n_classes > 1: # no point to run this when binary (foreground/background)
-                y_train = get_multi_class_labels(y_train, n_labels = self.n_classes, remove_background = True)
-
-            # Padding to the max patient shape (so the arrays can be stacked)
-            if self.dynamic_padding_z: # for when you don't want to pad the slice dimension (bc that usually changes in images)
-                pad_shape = (x_train.shape[0], ) + self.max_patient_shape
-            elif not self.dynamic_padding_z:
-                pad_shape = self.max_patient_shape
-            x_train = reshape(x_train, x_train.min(), pad_shape + (self.n_channels, ))
-            y_train = reshape(y_train, 0, pad_shape + (self.n_classes, ))
-            assert sanity_checks(x_train, y_train)
-
-            images_x.append(x_train), images_y.append(y_train)
-
-        if batchwise:
-            input_data, seg_masks = np.stack(images_x), np.stack(images_y)
-        elif not batchwise:
-            input_data, seg_masks = np.vstack(images_x), np.vstack(images_y)
-
         return (input_data, seg_masks)
