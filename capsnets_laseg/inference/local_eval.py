@@ -6,7 +6,8 @@ import nibabel as nib
 import numpy as np
 import os
 
-def pred_data_2D_per_sample(model, x_dir, y_dir, fnames, pad_shape, ct = False, batch_size = None):
+def pred_data_2D_per_sample(model, x_dir, y_dir, fnames, pad_shape = (256, 320), ct = False, mean_patient_shape = (115, 320, 232), \
+                            batch_size = 2):
     """
     Predicting 3D volumes slicewise (2D) one sample at a time.
     Assuming the input data is binary.
@@ -23,22 +24,22 @@ def pred_data_2D_per_sample(model, x_dir, y_dir, fnames, pad_shape, ct = False, 
         actual_y: actual labels
         padded_pred: stacked, thresholded predictions (padded to original shape)
     """
+    # can automatically infer the filenames to use (ensure that there are no junk files in x_dir)
     if fnames is None:
         fnames = os.listdir(x_dir)
-
     y_list = []
     pred_list = []
     for id in fnames:
         # loads sample as a 3D numpy arr and then changes the type to float32
         x = nib.load(os.path.join(x_dir, id))
         y = nib.load(os.path.join(y_dir, id))
-
         # preprocessing
         preprocessed_x, preprocessed_y, coords = isensee_preprocess(x, y, orig_spacing = None, get_coords = True, ct = \
-                                                                    ct, mean_patient_shape = (115, 320, 232))
+                                                                    ct, mean_patient_shape = mean_patient_shape)
         # pad to model input shape (predicting on a slicewise basis)
-        _pad_shape = (preprocessed_x.shape[0],) + pad_shape
+        _pad_shape = (preprocessed_x.shape[0],) + pad_shape # unique to each volume because the n_slice varies
         reshaped_x = np.expand_dims(reshape(preprocessed_x, preprocessed_x.min(), new_shape = _pad_shape), -1)
+        # prediction
         print("Predicting: ", id)
         predicted = model.predict(reshaped_x, batch_size = batch_size)
         # thresholding
@@ -47,7 +48,7 @@ def pred_data_2D_per_sample(model, x_dir, y_dir, fnames, pad_shape, ct = False, 
         # removing the reshape padding
         pred_no_pad = undo_reshape_padding(predicted, orig_shape = preprocessed_x.shape)
         # padding to original shape
-        actual_label = nii_to_np(y)
+        actual_label = nii_to_np(y) # purpose is to transpose axes to (z,x, y)
         orig_shape = actual_label.shape + (1,)
         padded_pred = pad_nonint_extraction(pred_no_pad, orig_shape, coords, pad_value = 0)
         y_list.append(actual_label), pred_list.append(padded_pred)
