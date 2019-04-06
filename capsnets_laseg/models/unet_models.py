@@ -157,12 +157,12 @@ class U_CapsNet(object):
         n_class: the number of classes including the background class
         decoder: whether or not you want to include a reconstruction decoder in the architecture
     """
-    def __init__(self, input_shape, n_class=2, decoder = True):
+    def __init__(self, input_shape, n_class=2, decoder = True,):
         self.input_shape = input_shape
         self.n_class = n_class
         self.decoder = decoder
 
-    def build_model(self, model_layer = None, capsnet_type = 'r3'):
+    def build_model(self, model_layer = None, capsnet_type = 'r3', upsamp_type = 'deconv'):
         """
         Builds the feature extractor + SegCaps network;
             Returns a keras.models.Model instance
@@ -173,6 +173,7 @@ class U_CapsNet(object):
             capsnet_type: type of capsule network
                 * 'r3':
                 * 'basic':
+            upsamp_type (str): one of ['deconv', 'subpix'] that represents the type of upsampling. Defaults to 'deconv'
         Returns:
             train_model: model for training
             eval_model: model for evaluation/inference
@@ -192,7 +193,7 @@ class U_CapsNet(object):
         # intializing the Capsule Network
         if capsnet_type.lower() == 'r3':
             train_model, eval_model = CapsNetR3(self.input_shape, n_class = 2, decoder = self.decoder, add_noise = False, \
-                                      input_layer = model)
+                                      input_layer = model, upsamp_type = upsamp_type)
         elif capsnet_type.lower() == 'basic':
             train_model, eval_model = CapsNetBasic(self.input_shape, n_class = 2, decoder = self.decoder, add_noise = False, \
                                       input_layer = model)
