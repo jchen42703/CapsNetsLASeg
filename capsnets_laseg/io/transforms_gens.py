@@ -120,9 +120,6 @@ class Transformed2DGenerator(BaseTransformGenerator):
                 # Adds channel in case there is no channel dimension
                 y_train = add_channel(y_train)
 
-            if self.n_classes > 1: # no point to run this when binary (foreground/background)
-                y_train = get_multi_class_labels(y_train, n_labels = self.n_classes, remove_background = True)
-
             # Padding to the max patient shape (so the arrays can be stacked)
             if self.dynamic_padding_z: # for when you don't want to pad the slice dimension (bc that usually changes in images)
                 pad_shape = (x_train.shape[0], ) + self.max_patient_shape
