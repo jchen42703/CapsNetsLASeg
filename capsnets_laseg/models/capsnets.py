@@ -4,7 +4,7 @@ K.set_image_data_format('channels_last')
 
 from capsnets_laseg.models.caps_layers import ConvCapsuleLayer, DeconvCapsuleLayer, Mask, Length
 
-def CapsNetR3(input_shape, n_class = 2, decoder = True, add_noise = False, input_layer = None,):
+def CapsNetR3(input_shape, n_class = 2, decoder = True, add_noise = False, input_layer = None, upsamp_type = 'deconv'):
     """
     Args:
         input_shape: Must be of shape (x, y, 1)
@@ -13,6 +13,7 @@ def CapsNetR3(input_shape, n_class = 2, decoder = True, add_noise = False, input
         add_noise: boolean on whether to have a layer that adds noise
         input_layer: keras layer; if it is None, then we automatically initialize one from `input_shape`
         (Also supports passing a model to serve as a feature extractor)
+        upsamp_type (str): one of ['deconv', 'subpix'] that represents the type of upsampling. Defaults to 'deconv'
     Returns:
         train_model: two inputs (x,y) for training
         eval_model: one input (x) for evaluation/inference
@@ -57,7 +58,7 @@ def CapsNetR3(input_shape, n_class = 2, decoder = True, add_noise = False, input
                                     routings=3, name='conv_cap_4_1')(conv_cap_3_2)
 
     # Layer 1 Up: Deconvolutional Capsule
-    deconv_cap_1_1 = DeconvCapsuleLayer(kernel_size=4, num_capsule=8, num_atoms=32, upsamp_type='deconv',
+    deconv_cap_1_1 = DeconvCapsuleLayer(kernel_size=4, num_capsule=8, num_atoms=32, upsamp_type=upsamp_type,
                                         scaling=2, padding='same', routings=3,
                                         name='deconv_cap_1_1')(conv_cap_4_1)
 
@@ -69,7 +70,7 @@ def CapsNetR3(input_shape, n_class = 2, decoder = True, add_noise = False, input
                                       padding='same', routings=3, name='deconv_cap_1_2')(up_1)
 
     # Layer 2 Up: Deconvolutional Capsule
-    deconv_cap_2_1 = DeconvCapsuleLayer(kernel_size=4, num_capsule=4, num_atoms=16, upsamp_type='deconv',
+    deconv_cap_2_1 = DeconvCapsuleLayer(kernel_size=4, num_capsule=4, num_atoms=16, upsamp_type=upsamp_type,
                                         scaling=2, padding='same', routings=3,
                                         name='deconv_cap_2_1')(deconv_cap_1_2)
 
@@ -81,7 +82,7 @@ def CapsNetR3(input_shape, n_class = 2, decoder = True, add_noise = False, input
                                       padding='same', routings=3, name='deconv_cap_2_2')(up_2)
 
     # Layer 3 Up: Deconvolutional Capsule
-    deconv_cap_3_1 = DeconvCapsuleLayer(kernel_size=4, num_capsule=2, num_atoms=16, upsamp_type='deconv',
+    deconv_cap_3_1 = DeconvCapsuleLayer(kernel_size=4, num_capsule=2, num_atoms=16, upsamp_type=upsamp_type,
                                         scaling=2, padding='same', routings=3,
                                         name='deconv_cap_3_1')(deconv_cap_2_2)
 
