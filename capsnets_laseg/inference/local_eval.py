@@ -73,7 +73,7 @@ def pred_data_2D_per_sample(model, x_dir, y_dir, fnames, pad_shape = (256, 320),
     try:
         padded_recon = np.vstack(recon_list)
     except ValueError: # can't stack empty list
-        recon = None
+        padded_recon = None
     return (actual_y, padded_pred, padded_recon, orig_images)
 
 def undo_reshape_and_nonint_extraction(pred, prior_reshape_shape, orig_shape, coords, pad_value = 0):
