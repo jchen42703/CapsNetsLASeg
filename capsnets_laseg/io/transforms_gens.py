@@ -12,33 +12,31 @@ class Transformed2DGenerator(BaseTransformGenerator):
     Loads data, slices them based on the number of positive slice indices and applies data augmentation with `batchgenerators.transforms`.
     * Supports channels_last
     * .nii files should not have the batch_size dimension
-
     Attributes:
         list_IDs: list of filenames
         data_dirs: list of paths to both the input dir and labels dir
         batch_size: The number of images you want in a single batch
         n_channels: number of channels
         n_classes: number of unique labels excluding the background class (i.e. binary; n_classes = 1)
-        ndim: number of dimensions of the input (excluding the batch_size and n_channels axes)
         n_pos: The number of positive class 2D images to include in a batch
         transform (Transform instance): If you want to use multiple Transforms, use the Compose Transform.
         max_patient_shape: a tuple representing the maximum patient shape in a dataset; i.e. ((z,)x,y)
             * Note: If you have 3D medical images and want 2D slices and don't want to overpad the slice dimension (z),
             provide a shape that is only 2D (x,y).
-        n_workers:
+        step_per_epoch:
         pos_mask: boolean representing whether or not output the positive masks (X*Y)
             * If True, inputs are for capsule networks with a decoder.
             * If False, inputs are for everything else.
         shuffle: boolean
     """
-    def __init__(self, list_IDs, data_dirs, batch_size, n_channels, n_classes, ndim,
-                n_pos, transform = None, max_patient_shape = None, n_workers = 1, pos_mask = True,
+    def __init__(self, list_IDs, data_dirs, batch_size, n_channels, n_classes,
+                n_pos, transform = None, max_patient_shape = None, steps_per_epoch = 1000, pos_mask = True,
                 shuffle = True):
 
         BaseTransformGenerator.__init__(self, list_IDs = list_IDs, data_dirs = data_dirs, batch_size = batch_size,
-                               n_channels = n_channels, n_classes = n_classes, ndim = ndim,
+                               n_channels = n_channels, n_classes = n_classes, ndim = 2,
                                transform = transform, max_patient_shape = max_patient_shape,
-                               n_workers = n_workers, shuffle = shuffle)
+                               steps_per_epoch = steps_per_epoch, shuffle = shuffle)
         self.n_pos = n_pos
         self.pos_mask = pos_mask
         if n_pos == 0:
@@ -121,9 +119,6 @@ class Transformed2DGenerator(BaseTransformGenerator):
             if not y_train.shape[-1] == self.n_channels:
                 # Adds channel in case there is no channel dimension
                 y_train = add_channel(y_train)
-
-            if self.n_classes > 1: # no point to run this when binary (foreground/background)
-                y_train = get_multi_class_labels(y_train, n_labels = self.n_classes, remove_background = True)
 
             # Padding to the max patient shape (so the arrays can be stacked)
             if self.dynamic_padding_z: # for when you don't want to pad the slice dimension (bc that usually changes in images)
