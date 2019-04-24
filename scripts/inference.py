@@ -3,6 +3,7 @@ from sklearn.metrics import precision_recall_fscore_support
 from capsnets_laseg.inference.local_eval import pred_data_2D_per_sample, evaluate_2D
 import json
 from training_utils import get_model
+import os
 
 def add_bool_arg(parser, name, default=False):
     """
@@ -19,6 +20,14 @@ def add_bool_arg(parser, name, default=False):
     group.add_argument("--" + name, dest=name, action="store_true")
     group.add_argument("--no-" + name, dest=name, action="store_false")
     parser.set_defaults(**{name:default})
+
+def _convert_fold_json_to_niigz(ids):
+    """
+    Specifically converts all of the file endings in the fold json dictionary from .npy to .nii.gz.
+    """
+    for key in ids.keys():
+      ids[key] = [file.split(".")[0] + ".nii.gz" for file in ids[key]]
+    return ids
 
 if __name__ == "__main__":
     # parsing the arguments from the command prompt
@@ -44,7 +53,8 @@ if __name__ == "__main__":
     # loading the json
     with open(args.fold_json_path, "r") as fp:
         id_dict = json.load(fp)
-    train_model, eval_model = get_model(args.model_name, None, decoder = args.decoder, inference = True)
+    id_dict = _convert_fold_json_to_niigz(id_dict)
+    train_model, eval_model = get_model(args.model_name, decoder = args.decoder, inference = True)
     if eval_model is None: # dealing with the CNNs who only return train_model
         eval_model = train_model
     eval_model.load_weights(args.weights_path)
