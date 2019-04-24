@@ -1,7 +1,5 @@
 import numpy as np
 from keras_med_io.utils.custom_augmentations import get_positive_idx, get_random_slice_idx
-from keras_med_io.utils.misc_utils import sanity_checks, add_channel, \
-                                       get_multi_class_labels, load_data
 from keras_med_io.utils.shape_io import reshape
 from keras_med_io.base_generators.base_gens import BaseTransformGenerator
 import nibabel as nib
@@ -16,11 +14,9 @@ class Transformed2DGenerator(BaseTransformGenerator):
         list_IDs: list of filenames
         data_dirs: list of paths to both the input dir and labels dir
         batch_size: The number of images you want in a single batch
-        n_channels: number of channels
-        n_classes: number of unique labels excluding the background class (i.e. binary; n_classes = 1)
         n_pos: The number of positive class 2D images to include in a batch
         transform (Transform instance): If you want to use multiple Transforms, use the Compose Transform.
-        max_patient_shape: a tuple representing the maximum patient shape in a dataset; i.e. ((z,)x,y)
+        max_patient_shape (tuple): representing the maximum patient shape in a dataset; i.e. ((z,)x,y)
             * Note: If you have 3D medical images and want 2D slices and don't want to overpad the slice dimension (z),
             provide a shape that is only 2D (x,y).
         step_per_epoch:
@@ -29,12 +25,11 @@ class Transformed2DGenerator(BaseTransformGenerator):
             * If False, inputs are for everything else.
         shuffle: boolean
     """
-    def __init__(self, list_IDs, data_dirs, batch_size, n_channels, n_classes,
-                n_pos, transform = None, max_patient_shape = None, steps_per_epoch = 1000, pos_mask = True,
-                shuffle = True):
+    def __init__(self, list_IDs, data_dirs, batch_size = 2, n_pos = 1,
+                transform = None, max_patient_shape = (256, 320), steps_per_epoch = 1536, pos_mask = True, shuffle = True):
 
         BaseTransformGenerator.__init__(self, list_IDs = list_IDs, data_dirs = data_dirs, batch_size = batch_size,
-                               n_channels = n_channels, n_classes = n_classes, ndim = 2,
+                               n_channels = 1, n_classes = 1, ndim = 2,
                                transform = transform, max_patient_shape = max_patient_shape,
                                steps_per_epoch = steps_per_epoch, shuffle = shuffle)
         self.n_pos = n_pos
@@ -111,15 +106,8 @@ class Transformed2DGenerator(BaseTransformGenerator):
         images_y = []
         for id in list_IDs_temp:
             # loads data as a numpy arr and then changes the type to float32
-            x_train = load_data(os.path.join(self.data_dirs[0], id))
-            y_train = load_data(os.path.join(self.data_dirs[1], id))
-            if not x_train.shape[-1] == self.n_channels:
-                # Adds channel in case there is no channel dimension
-                x_train = add_channel(x_train)
-            if not y_train.shape[-1] == self.n_channels:
-                # Adds channel in case there is no channel dimension
-                y_train = add_channel(y_train)
-
+            x_train = np.expand_dims(np.load(os.path.join(self.data_dirs[0], id)), -1)
+            y_train = np.expand_dims(np.load(os.path.join(self.data_dirs[1], id)), -1)
             # Padding to the max patient shape (so the arrays can be stacked)
             if self.dynamic_padding_z: # for when you don't want to pad the slice dimension (bc that usually changes in images)
                 pad_shape = (x_train.shape[0], ) + self.max_patient_shape
@@ -127,7 +115,6 @@ class Transformed2DGenerator(BaseTransformGenerator):
                 pad_shape = self.max_patient_shape
             x_train = reshape(x_train, x_train.min(), pad_shape + (self.n_channels, ))
             y_train = reshape(y_train, 0, pad_shape + (self.n_classes, ))
-            assert sanity_checks(x_train, y_train)
             # extracting slice:
             if pos_sample:
                 slice_idx = get_positive_idx(y_train)[0]
