@@ -42,6 +42,10 @@ if __name__ == "__main__":
                         help = "Number of batches per epoch.")
     parser.add_argument("--fold_json_path", type = str, required = False, default = "",
                         help = "Path to the json with the filenames split. If this is not specified, the json will be created in 'weights_dir.'")
+    parser.add_argument("--weights_name", type = str, required = False, default = "",
+                        help = "Name of the h5 file you want to load the weights from.")
+    parser.add_argument("--initial_epoch", type = int, required = False, default = 0,
+                        help = "The initial epoch for training.")
     args = parser.parse_args()
     # Setting up the initial filenames and path
     data_dirs = [os.path.join(args.dset_path, "imagesTr"), os.path.join(args.dset_path, "labelsTr")]
@@ -63,18 +67,24 @@ if __name__ == "__main__":
     gen, gen_val = get_generators(id_dict, data_dirs, args.batch_size, args.n_pos, transform, steps = args.steps_per_epoch, pos_mask = args.decoder)
     model = get_model(args.model_name, args.lr, decoder = args.decoder)
     callbacks = get_callbacks(args.model_name, args.weights_dir, args.decoder)
+    # checking if to load weights or not
+    weights_path = os.path.join(args.weights_dir, args.weights_name)
+    if args.weights_name != "" and os.path.exists(weights_path):
+        print("Loading weights from: ", weights_path)
+        model.load_weights(weights_path)
     # training
     # feel free to change the settings here if you want to
     print("Starting training...")
     history = model.fit_generator(generator = gen, steps_per_epoch = len(gen), epochs = args.epochs, callbacks = callbacks, validation_data = gen_val,
-                                        validation_steps = len(gen_val), max_queue_size = 20, workers = 1, use_multiprocessing = False)
+                                  validation_steps = len(gen_val), max_queue_size = 20, workers = 1, use_multiprocessing = False, initial_epoch = args.initial_epoch)
     print("Finished training!")
     # save model and history
-    history_path = os.path.join(args.weights_dir, args.model_name + "_history.json")
-    with open(history_path, 'w') as fp:
-        json.dump(history, fp)
-    print("Saved the training history in ", history_path)
+    history_path = os.path.join(args.weights_dir, args.model_name + "_history.pickle")
 
+    import pickle
+    with open(history_path, 'wb') as file_pi:
+        pickle.dump(history.history, file_pi)
+    print("Saved the training history in ", history_path)
     weights_path = os.path.join(args.weights_dir, args.model_name + "_weights_" + str(args.epochs) + "epochs.h5")
     model.save(weights_path)
     print("Saved the weights in ", weights_path)
