@@ -8,6 +8,7 @@ from capsnets_laseg.models.metrics import dice_coefficient_loss, dice_hard, dice
 
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
+import numpy as np
 
 def get_transforms(patch_shape = (256, 320), other_transforms = None, random_crop = False):
     """
