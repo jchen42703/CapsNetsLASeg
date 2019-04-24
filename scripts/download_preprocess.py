@@ -15,7 +15,7 @@ def dload_heart(dset_path = '/content/'):
 
     download_dataset(dset_path, dataset, id)
     return
-    
+
 def download_dataset(dset_path, dataset, id='1wEB2I6S6tQBVEPxir8cA5kFB8gTQadYY'):
     """
     Args:
@@ -24,7 +24,7 @@ def download_dataset(dset_path, dataset, id='1wEB2I6S6tQBVEPxir8cA5kFB8gTQadYY')
     """
     tar_path = os.path.join(dset_path, dataset) + '.tar'
     gdd.download_file_from_google_drive(file_id=id,
-                                        dset_path=tar_path, overwrite=False,
+                                        dest_path=tar_path, overwrite=False,
                                         unzip=False)
 
     if not os.path.exists(os.path.join(dset_path, dataset)):
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     print("Input Directory: ", input_dir, "\nOutput Directory: ", output_dir)
     # Downloading the dataset if it's not already downloaded
     if not os.path.isdir(input_dir):
-        load_MSD(task_no = 2, dset_path = args.dset_path)
+        dload_heart(dset_path = args.dset_path)
     preprocess = LocalPreprocessingBinarySeg(input_dir, output_dir)
     # removing the weird files that start with .__
     training_dir, labels_dir = os.path.join(input_dir, 'imagesTr'), os.path.join(input_dir, 'labelsTr')
