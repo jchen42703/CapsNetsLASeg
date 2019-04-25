@@ -2,24 +2,8 @@ import argparse
 from sklearn.metrics import precision_recall_fscore_support
 from capsnets_laseg.inference.local_eval import pred_data_2D_per_sample, evaluate_2D
 import json
-from training_utils import get_model
+from training_utils import get_model, add_bool_arg
 import os
-
-def add_bool_arg(parser, name, default=False):
-    """
-    From: https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
-    Handles boolean cases from command line through the creating two mutually exclusive arguments: --name and --no-name.
-    Args:
-        parser (arg.parse.ArgumentParser): the parser you want to add the arguments to
-        name: name of the common feature name for the two mutually exclusive arguments; dest = name
-        default: default boolean for command line
-    Returns:
-        None
-    """
-    group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument("--" + name, dest=name, action="store_true")
-    group.add_argument("--no-" + name, dest=name, action="store_false")
-    parser.set_defaults(**{name:default})
 
 def _convert_fold_json_to_niigz(ids):
     """

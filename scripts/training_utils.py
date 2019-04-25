@@ -9,6 +9,7 @@ from capsnets_laseg.models.metrics import dice_coefficient_loss, dice_hard, dice
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 import numpy as np
+import argparse
 
 def get_transforms(patch_shape = (256, 320), other_transforms = None, random_crop = False):
     """
@@ -133,3 +134,19 @@ def get_callbacks(model_name, checkpoint_dir = "/content/checkpoint.h5", decoder
     lrplat = ReduceLROnPlateau(monitor = monitor, factor = 0.8, patience = patience_lr, mode = mode, min_delta = min_delta, min_lr = min_lr, cooldown = cooldown)
     callbacks = [ckpoint, stop, lrplat,]
     return callbacks
+
+def add_bool_arg(parser, name, default=False):
+    """
+    From: https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+    Handles boolean cases from command line through the creating two mutually exclusive arguments: --name and --no-name.
+    Args:
+        parser (arg.parse.ArgumentParser): the parser you want to add the arguments to
+        name: name of the common feature name for the two mutually exclusive arguments; dest = name
+        default: default boolean for command line
+    Returns:
+        None
+    """
+    group = parser.add_mutually_exclusive_group(required=False)
+    group.add_argument("--" + name, dest=name, action="store_true")
+    group.add_argument("--no-" + name, dest=name, action="store_false")
+    parser.set_defaults(**{name:default})
