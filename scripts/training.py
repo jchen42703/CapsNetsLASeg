@@ -26,9 +26,9 @@ if __name__ == "__main__":
     parser.add_argument("--weights_dir", type = str, required = True,
                         help = "Path to the base directory where you want to save your weights")
     parser.add_argument("--dset_path", type = str, required = True,
-                        help = "Path to the base directory where the imagesTr and labelsTr directory are.")
+                        help = "Path to the base directory where the preprocessed imagesTr and labelsTr directory are (./Preprocessed_Heart).")
     parser.add_argument("--model_name", type = str, required = True,
-                        help = "Path to the base directory where you want to download and extract the tar file")
+                        help = "Name of the model you want to train: `cnn`, `capsr3`, `ucapsr3`, or `cnn-simple`")
     add_bool_arg(parser, "decoder", default = False) # defaults to extract = True
     parser.add_argument("--epochs", type = int, required = True,
                         help = "Number of epochs")
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     # feel free to change the settings here if you want to
     print("Starting training...")
     history = model.fit_generator(generator = gen, steps_per_epoch = len(gen), epochs = args.epochs, callbacks = callbacks, validation_data = gen_val,
-                                  validation_steps = len(gen_val), max_queue_size = args.max_queue_size, workers = 1, use_multiprocessing = False, 
+                                  validation_steps = len(gen_val), max_queue_size = args.max_queue_size, workers = 1, use_multiprocessing = False,
                                   initial_epoch = args.initial_epoch)
     print("Finished training!")
     # save model and history

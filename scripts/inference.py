@@ -33,13 +33,13 @@ if __name__ == "__main__":
     # parsing the arguments from the command prompt
     parser = argparse.ArgumentParser(description="For predicting and evaluating on Task 2 of the Medical Segmentation Decathlon using Capsule Networks and CNNs")
     parser.add_argument("--weights_path", type = str, required = True,
-                        help = "Path to the saved weights.")
+                        help = "Path to the saved weights (the .h5 file directly).")
     parser.add_argument("--raw_dset_path", type = str, required = True,
-                        help = "Path to the base directory where the unpreprocessed imagesTr and labelsTr directory are.")
+                        help = "Path to the base directory where the unpreprocessed imagesTr and labelsTr directory are (Task02_Heart).")
     parser.add_argument("--model_name", type = str, required = True,
-                        help = "Path to the base directory where you want to download and extract the tar file")
+                        help = "Name of the model you want to predict and evaluate with: `cnn`, `capsr3`, `ucapsr3`, or `cnn-simple`")
     parser.add_argument("--fold_json_path", type = str, required = True,
-                        help = "Path to the json with the filenames split. If this is not specified, the json will be created in 'weights_dir.'")
+                        help = "Path to the json with the filenames split that was used for training.")
     add_bool_arg(parser, "decoder", default = False) # defaults to extract = True
     parser.add_argument("--batch_size", type = int, required = False, default = 2,
                         help = "Batch size for the CNN should be 17 and for the Capsule Network, it should be 2.")
