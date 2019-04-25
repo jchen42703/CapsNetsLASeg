@@ -55,5 +55,6 @@ if __name__ == "__main__":
         import os
         print("Saving the predictions in: ", args.save_dir)
         np.save(os.path.join(args.save_dir, "pred_seg.npy"), pred)
+        np.save(os.path.join(args.save_dir, "actual_test.npy"), actual_y)
         if recon is not None:
             np.save(os.path.join(args.save_dir, "recon_seg.npy"), recon)
