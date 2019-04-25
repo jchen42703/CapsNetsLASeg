@@ -46,6 +46,8 @@ if __name__ == "__main__":
                         help = "Name of the h5 file you want to load the weights from.")
     parser.add_argument("--initial_epoch", type = int, required = False, default = 0,
                         help = "The initial epoch for training.")
+    parser.add_argument("--max_queue_size", type = int, required = False, default = 20,
+                        help = "Max queue size for training.")
     args = parser.parse_args()
     # Setting up the initial filenames and path
     data_dirs = [os.path.join(args.dset_path, "imagesTr"), os.path.join(args.dset_path, "labelsTr")]
@@ -76,7 +78,8 @@ if __name__ == "__main__":
     # feel free to change the settings here if you want to
     print("Starting training...")
     history = model.fit_generator(generator = gen, steps_per_epoch = len(gen), epochs = args.epochs, callbacks = callbacks, validation_data = gen_val,
-                                  validation_steps = len(gen_val), max_queue_size = 20, workers = 1, use_multiprocessing = False, initial_epoch = args.initial_epoch)
+                                  validation_steps = len(gen_val), max_queue_size = args.max_queue_size, workers = 1, use_multiprocessing = False, 
+                                  initial_epoch = args.initial_epoch)
     print("Finished training!")
     # save model and history
     history_path = os.path.join(args.weights_dir, args.model_name + "_history.pickle")
