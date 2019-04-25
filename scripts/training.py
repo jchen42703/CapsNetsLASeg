@@ -66,7 +66,7 @@ if __name__ == "__main__":
     transform = get_transforms()
     gen, gen_val = get_generators(id_dict, data_dirs, args.batch_size, args.n_pos, transform, steps = args.steps_per_epoch, pos_mask = args.decoder)
     model = get_model(args.model_name, args.lr, decoder = args.decoder)
-    callbacks = get_callbacks(args.model_name, args.weights_dir, args.decoder)
+    callbacks = get_callbacks(args.model_name, os.path.join(args.weights_dir, "checkpoint.h5"), args.decoder)
     # checking if to load weights or not
     weights_path = os.path.join(args.weights_dir, args.weights_name)
     if args.weights_name != "" and os.path.exists(weights_path):
