@@ -72,6 +72,44 @@ __Required Arguments:__
 
 Similar to the previous section, you can view the other optional arguments, such as `batch_size`, `save_dir`, `decoder`, etc. in the original [script](https://github.com/jchen42703/CapsNetsLASeg/blob/master/scripts/inference.py).
 
+## Results
+<table>
+  <tbody>
+    <tr>
+      <!-- header row -->
+      <th>Neural Network</th>
+      <th align="center">Parameters</th>
+      <th align="center">Test Dice</th>
+      <th align="center">Weights</th>
+    </tr>
+    <!--row (person information)-->
+    <tr>
+      <td align="center">U-Net</td>
+      <td align="center">27,671,926</td>
+      <td align="center">0.89</td>
+      <td align="center">https://drive.google.com/open?id=1G_0sgIig5wcJ-nrIpZdCsOB1uFXwaX23</td>
+    </tr>
+    <tr>
+      <td align="center">U-Net (Baseline)</td>
+      <td align="center">4,434,385</td>
+      <td align="center">0.866</td>
+      <td align="center">https://drive.google.com/open?id=1Xm-TV1apc_LK8wJrDZC5pBGXeirE5S57</td>
+    </tr>
+    <tr>
+      <td align="center">U-CapsNet</td>
+      <td align="center">4,542,400</td>
+      <td align="center">0.876</td>
+      <td align="center">https://drive.google.com/open?id=1ji0U9bd0GoLdvXwK9ARTwpUum1NiNiQ-</td>
+    </tr>
+    <tr>
+      <td align="center">SegCaps</td>
+      <td align="center">1,416,112</td>
+      <td align="center">0.81</td>
+      <td align="center">https://drive.google.com/open?id=1k8f474s4rNwggtp3SWRTQXfLY-f85zvh</td>
+    </tr>
+  </tbody>
+</table>
+
 ## Expanding to Other Datasets
 Note that this repository is specifically catered towards the binary segmentation of mono-modal MRIs. However, the `AdaptiveUNet` architecture and the loss functions in [metrics](https://github.com/jchen42703/CapsNetsLASeg/blob/master/capsnets_laseg/models/metrics.py) can be extended to multi-class problems.
 
