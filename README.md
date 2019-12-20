@@ -17,22 +17,13 @@ These are automatically installed through the `Regular repository installation` 
 * [batchgenerators](https://github.com/MIC-DKFZ/batchgenerators)
 * sklearn
 
-Needs to be installed separately:
-* [keras_med_io](https://github.com/jchen42703/keras_med_io/)
-
 ### Regular repository installation
 ```
 git clone https://github.com/jchen42703/CapsNetsLASeg.git
 cd CapsNetsLASeg
 pip install .
 ```
-### keras_med_io installation
-(If you don't already have it installed)
-```
-git clone https://github.com/jchen42703/keras_med_io.git
-cd keras_med_io
-pip install .
-```
+
 ### Dataset Installation
 Run the following line in terminal to automatically download the dataset, `Task02_Heart`, in `dset_path` and create a new preprocessed dataset, `Preprocessed_Heart` in `output_path`.
 ```

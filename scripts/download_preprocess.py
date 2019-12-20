@@ -2,7 +2,7 @@ import os
 import tarfile
 from google_drive_downloader import GoogleDriveDownloader as gdd
 import argparse
-from capsnets_laseg.io.io import LocalPreprocessingBinarySeg
+from capsnets_laseg.io import LocalPreprocessingBinarySeg
 import glob
 
 def dload_heart(dset_path='/content/'):

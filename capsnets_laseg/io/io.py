@@ -1,11 +1,11 @@
-from keras_med_io.utils.shape_io import reshape, resample_array, \
-                                        extract_nonint_region
-from capsnets_laseg.io.io_utils import *
 import json
 import os
-import nibabel as nib
 from os.path import join, isdir
+import nibabel as nib
 import numpy as np
+
+from .preprocess_utils import reshape, resample_array, extract_nonint_region
+from .io_utils import *
 
 class LocalPreprocessingBinarySeg(object):
     """

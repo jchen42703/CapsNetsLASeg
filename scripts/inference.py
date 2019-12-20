@@ -1,6 +1,6 @@
 import argparse
 from sklearn.metrics import precision_recall_fscore_support
-from capsnets_laseg.inference.local_eval import pred_data_2D_per_sample, evaluate_2D
+from capsnets_laseg.inference import pred_data_2D_per_sample, evaluate_2D
 import json
 from training_utils import get_model, add_bool_arg
 import os

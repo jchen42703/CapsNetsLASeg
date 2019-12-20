@@ -2,8 +2,7 @@ from keras import layers, models
 from keras import backend as K
 K.set_image_data_format('channels_last')
 
-from capsnets_laseg.models.caps_layers import ConvCapsuleLayer, \
-                                              DeconvCapsuleLayer, Mask, Length
+from .caps_layers import ConvCapsuleLayer, DeconvCapsuleLayer, Mask, Length
 
 def CapsNetR3(input_shape, n_class=2, decoder=True, add_noise=False,
               input_layer=None, upsamp_type='deconv'):

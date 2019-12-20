@@ -1,9 +1,10 @@
 import numpy as np
-from keras_med_io.utils.custom_augmentations import get_positive_idx, get_random_slice_idx
-from keras_med_io.utils.shape_io import reshape
-from keras_med_io.base_generators.base_gens import BaseTransformGenerator
 import nibabel as nib
 import os
+
+from .preprocess_utils import get_positive_idx, get_random_slice_idx, \
+                              reshape
+from .base_gens import BaseTransformGenerator
 
 class Transformed2DGenerator(BaseTransformGenerator):
     """

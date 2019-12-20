@@ -2,16 +2,16 @@ from batchgenerators.transforms.spatial_transforms import MirrorTransform
 from batchgenerators.transforms.spatial_transforms import SpatialTransform
 from batchgenerators.transforms.abstract_transforms import Compose
 
-from capsnets_laseg.io.transforms_gens import Transformed2DGenerator
-from capsnets_laseg.models.unet_models import U_CapsNet, CapsNetR3, \
-                                              AdaptiveUNet, SimpleUNet
-from capsnets_laseg.models.metrics import dice_coefficient_loss, dice_hard, \
-                                          dice_plus_xent_loss
-
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 import numpy as np
 import argparse
+
+from capsnets_laseg.io import Transformed2DGenerator
+from capsnets_laseg.models import U_CapsNet, CapsNetR3, AdaptiveUNet, \
+                                  SimpleUNet
+from capsnets_laseg.metrics import dice_coefficient_loss, dice_hard, \
+                                   dice_plus_xent_loss
 
 def get_transforms(patch_shape=(256, 320), other_transforms=None,
                    random_crop=False):

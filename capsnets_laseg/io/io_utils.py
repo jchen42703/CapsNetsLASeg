@@ -1,8 +1,9 @@
 import numpy as np
 from skimage.transform import resize
-from keras_med_io.utils.intensity_io import clip_upper_lower_percentile
-from keras_med_io.utils.shape_io import extract_nonint_region, resample_array
 from nibabel import Nifti1Image
+
+from .preprocess_utils import clip_upper_lower_percentile, \
+                              extract_nonint_region, resample_array
 
 def isensee_preprocess(input_image, mask, orig_spacing, get_coords=False,
                        ct=False, mean_patient_shape=(115, 320, 232)):
