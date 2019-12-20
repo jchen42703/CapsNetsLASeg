@@ -89,8 +89,9 @@ class BaseTransformGenerator(BaseGenerator):
         n_idx = self.batch_size * steps_per_epoch # number of samples per epoch
         # Handles cases where the dataset is small and the batch size is high
         if n_idx > n_samples:
-            print("Adjusting the indexes since the total number of required samples (steps_per_epoch * batch_size) is greater than",
-            "the number of provided images.")
+            print("Adjusting the indexes since the total number of required",
+                  "samples (steps_per_epoch * batch_size) is greater than",
+                  "the number of provided images.")
             self.adjust_indexes(n_idx)
             print("Done!")
         assert self.indexes.size == n_idx
@@ -206,13 +207,15 @@ class BaseTransformGenerator(BaseGenerator):
         max_patient_shape = tuple(np.max(shapes, axis=0))
         mean_patient_shape = tuple(np.mean(shapes, axis=0))
         min_patient_shape = tuple(np.min(shapes, axis=0))
-        print("Max Patient Shape: ", max_patient_shape, "\nMean Patient Shape: ", mean_patient_shape,
-        "\nMin Patient Shape: ", min_patient_shape)
+        print(f"Max Patient Shape: {max_patient_shape},
+              f"\nMean Patient Shape: {mean_patient_shape}",
+              f"\nMin Patient Shape: {min_patient_shape}")
         # Running a quick check on a possible fail case
         try:
             assert len(max_patient_shape) == self.ndim
         except AssertionError:
-            print("Excluding the channels dimension (axis = -1) for the maximum patient shape.")
+            print("Excluding the channels dimension (axis = -1)",
+                  " for the maximum patient shape.")
             max_patient_shape = max_patient_shape[:-1]
         return max_patient_shape
 

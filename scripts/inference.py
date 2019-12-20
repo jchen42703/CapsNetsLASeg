@@ -1,4 +1,3 @@
-import argparse
 from sklearn.metrics import precision_recall_fscore_support
 from capsnets_laseg.inference import pred_data_2D_per_sample, evaluate_2D
 import json
@@ -15,6 +14,7 @@ def _convert_fold_json_to_niigz(ids):
     return ids
 
 if __name__ == "__main__":
+    import argparse
     # parsing the arguments from the command prompt
     parser = argparse.ArgumentParser(description="For predicting and evaluating on Task 2 of the Medical Segmentation Decathlon using Capsule Networks and CNNs")
     parser.add_argument("--weights_path", type=str, required=True,
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     input_shape = (256, 320, 1)
-    local_train_path, local_label_path=os.path.join(args.raw_dset_path, "imagesTr"), os.path.join(args.raw_dset_path, "labelsTr")
+    local_train_path, local_label_path = os.path.join(args.raw_dset_path, "imagesTr"), os.path.join(args.raw_dset_path, "labelsTr")
 
     # loading the json
     with open(args.fold_json_path, "r") as fp:
@@ -44,21 +44,21 @@ if __name__ == "__main__":
         eval_model = train_model
     eval_model.load_weights(args.weights_path)
     # prediction
-    print("Predicting", str(len(id_dict["test"])), "files")
+    print(f"Predicting {len(id_dict["test"]} files")
     actual_y, pred, recon, orig_images = pred_data_2D_per_sample(eval_model,
                                                                  local_train_path,
                                                                  local_label_path,
                                                                  id_dict["test"],
                                                                  pad_shape=input_shape[:-1],
                                                                  batch_size=args.batch_size)
-    print("Groundtruth Shape: ", actual_y.shape, "\nPrediction Shape: ", pred.shape)
+    print(f"Groundtruth Shape: {actual_y.shape}\nPrediction Shape: {pred.shape}")
     # evaluation
     results = evaluate_2D(actual_y, pred)
     # Saving the predictions
     if args.save_dir != "":
         import numpy as np
         import os
-        print("Saving the predictions in: ", args.save_dir)
+        print(f"Saving the predictions in: {args.save_dir}")
         np.save(os.path.join(args.save_dir, "pred_seg.npy"), pred)
         np.save(os.path.join(args.save_dir, "actual_test_y.npy"), actual_y)
         np.save(os.path.join(args.save_dir, "actual_test_x.npy"), orig_images)

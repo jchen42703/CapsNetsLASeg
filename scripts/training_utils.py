@@ -1,11 +1,8 @@
-from batchgenerators.transforms.spatial_transforms import MirrorTransform
-from batchgenerators.transforms.spatial_transforms import SpatialTransform
-from batchgenerators.transforms.abstract_transforms import Compose
-
+import numpy as np
+from batchgenerators.transforms import MirrorTransform, SpatialTransform, \
+                                       Compose
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
-import numpy as np
-import argparse
 
 from capsnets_laseg.io import Transformed2DGenerator
 from capsnets_laseg.models import U_CapsNet, CapsNetR3, AdaptiveUNet, \
@@ -27,14 +24,15 @@ def get_transforms(patch_shape=(256, 320), other_transforms=None,
         both random_crop=True and False.
     """
     ndim = len(patch_shape)
-    spatial_transform = SpatialTransform(patch_shape,
-                     do_elastic_deform=True, alpha=(0., 1500.), sigma=(30., 80.),
-                     do_rotation=True, angle_z=(0, 2 * np.pi),
-                     do_scale=True, scale=(0.75, 2.),
-                     border_mode_data="nearest", border_cval_data=0,
-                     order_data=1, random_crop=random_crop,
-                     p_el_per_sample=0.1, p_scale_per_sample=0.1,
-                     p_rot_per_sample=0.1)
+    spatial_params = {
+        "do_elastic_deform": True, "alpha": (0., 1500.), "sigma": (30., 80.),
+        "do_rotation": True, "angle_z": (0, 2 * np.pi), "do_scale": True,
+        "scale": (0.75, 2.), "border_mode_data": "nearest",
+        "border_cval_data": 0, "order_data": 1, "random_crop": random_crop,
+        "p_el_per_sample": 0.1, "p_scale_per_sample": 0.1,
+        "p_rot_per_sample": 0.1)
+    }
+    spatial_transform = SpatialTransform(patch_shape, **spatial_params)
     mirror_transform = MirrorTransform(axes=(0,1))
     transforms_list = [spatial_transform, mirror_transform]
     if other_transforms is not None:
@@ -51,7 +49,8 @@ def get_generators(list_IDs, data_dirs, batch_size=2, n_pos=1, transform=None,
     Returns:
         gen, gen_val: 2D slice generators based on keras.utils.Sequence
     """
-    print("Using 2D Generators...", "\nUsing at least: ", str(n_pos), "positive class slices")
+    print("Using 2D Generators...",
+          f"\nUsing at least: {n_pos} positive class slices")
     train_ids, val_ids = list_IDs["train"], list_IDs["val"]
     gen = Transformed2DGenerator(train_ids, data_dirs, batch_size=batch_size,
                                  n_pos=n_pos, transform=transform,
@@ -62,7 +61,7 @@ def get_generators(list_IDs, data_dirs, batch_size=2, n_pos=1, transform=None,
                                      max_patient_shape=max_patient_shape,
                                      steps_per_epoch=int(steps//6),
                                      pos_mask=pos_mask, shuffle=False)
-    print("Steps per epoch: ", len(gen), "\nValidation Steps: ", len(gen_val))
+    print(f"Steps per epoch: {len(gen)}\nValidation Steps: {len(gen_val)}")
     return gen, gen_val
 
 def get_model(model_name, lr=3e-5, input_shape=(256, 320, 1), decoder=False,
@@ -164,6 +163,22 @@ def get_callbacks(model_name, checkpoint_dir="/content/checkpoint.h5",
                                cooldown=cooldown)
     callbacks = [ckpoint, stop, lrplat]
     return callbacks
+
+def get_list_IDs(data_dir, splits = [0.6, 0.2, 0.2]):
+    """
+    Divides filenames into train/val/test sets
+    Args:
+        data_dir: file path to the directory of all the files; assumes labels and training images have same names
+        splits: a list with 3 elements corresponding to the decimal train/val/test splits; [train, val, test]
+    Returns:
+        a dictionary of file ids for each set
+    """
+    id_list = os.listdir(data_dir)
+    total = len(id_list)
+    train = round(total * splits[0])
+    val_split = round(total * splits[1]) + train
+    return {"train": id_list[:train], "val": id_list[train:val_split], "test": id_list[val_split:]
+           }
 
 def add_bool_arg(parser, name, default=False):
     """

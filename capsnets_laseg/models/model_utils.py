@@ -85,14 +85,14 @@ class AdaptiveNetwork(object):
             n_pool += 1
             shape_temp_list.append(shape_temp)
         axes_dict['min_shape'] = tuple(shape_temp.astype(np.int32))
-        print("Deducing number of pools...\nMinimum shape: ", shape_temp)
+        print(f"Deducing number of pools...\nMinimum shape: {shape_temp}")
         # deals with the case where after all pools are done, the output is all 8
 #         if np.array_equal(axes_dict['min_shape'], max_down_shape):
         if (axes_dict['min_shape'] == tuple(max_down_shape)):
             axes_dict = {i: self.max_pools for i in range(self.ndim)}
         output_n_pools = tuple([axes_dict[i] for i in range(self.ndim)])
 
-        print("Number of pools for each corresponding axis: ", output_n_pools)
+        print(f"Number of pools for each corresponding axis: {output_n_pools}")
         return output_n_pools
 
     def generate_pool_sizes(self, n_pools):

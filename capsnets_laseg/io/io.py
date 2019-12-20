@@ -18,7 +18,7 @@ class LocalPreprocessingBinarySeg(object):
         self.mean_patient_shape = mean_patient_shape
         if not isdir(output_path):
             os.mkdir(output_path)
-            print("Created directory: ", output_path)
+            print(f"Created directory: {output_path}")
         print(self.scan_metadata())
 
     def scan_metadata(self):
@@ -78,11 +78,12 @@ class LocalPreprocessingBinarySeg(object):
         # checking to make sure that the output directories exist
         if not isdir(out_images_dir):
             os.mkdir(out_images_dir)
-            print("Created directory: ", out_images_dir)
+            print(f"Created directory: {out_images_dir}")
         if not isdir(out_labels_dir):
             os.mkdir(out_labels_dir)
-            print("Created directory: ", out_labels_dir)
+            print(f"Created directory: {out_labels_dir}")
         # Saving the arrays as 'raw_id.npy'
         raw_id = id.split(".")[0] # gets rid of file stem
-        np.save(os.path.join(out_images_dir, raw_id), image), np.save(os.path.join(out_labels_dir, raw_id), mask)
-        return "Saved: " + raw_id
+        np.save(os.path.join(out_images_dir, raw_id), image)
+        np.save(os.path.join(out_labels_dir, raw_id), mask)
+        return f"Saved: {raw_id}"

@@ -2,7 +2,8 @@ import argparse
 import os
 import json
 
-from training_utils import get_model, get_transforms, get_callbacks, get_generators, add_bool_arg
+from training_utils import get_model, get_transforms, get_callbacks, \
+                           get_generators, get_list_IDs, add_bool_arg
 
 if __name__ == "__main__":
     # parsing the arguments from the command prompt
@@ -37,16 +38,15 @@ if __name__ == "__main__":
     data_dirs = [os.path.join(args.dset_path, "imagesTr"), os.path.join(args.dset_path, "labelsTr")]
     if args.fold_json_path == "":
         print("Creating the fold...60/20/20 split")
-        from keras_med_io.utils.misc_utils import get_list_IDs
         id_dict = get_list_IDs(data_dirs[0])
         args.fold_json_path = os.path.join(args.weights_dir,
-                                           args.model_name + "_fold1.json")
-        print("Saving the fold in: ", args.fold_json_path)
+                                           f"{args.model_name}_fold1.json")
+        print(f"Saving the fold in: {args.fold_json_path}")
         # Saving current fold as a json
-        with open(args.fold_json_path, 'w') as fp:
+        with open(args.fold_json_path, "w") as fp:
             json.dump(id_dict, fp)
     else:
-        with open(args.fold_json_path, 'r') as fp:
+        with open(args.fold_json_path, "r") as fp:
             id_dict = json.load(fp)
 
     # create generators, callbacks, and model
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # checking if to load weights or not
     weights_path = os.path.join(args.weights_dir, args.weights_name)
     if args.weights_name != "" and os.path.exists(weights_path):
-        print("Loading weights from: ", weights_path)
+        print(f"Loading weights from: {weights_path}")
         model.load_weights(weights_path)
     # training
     # feel free to change the settings here if you want to
@@ -77,12 +77,13 @@ if __name__ == "__main__":
     print("Finished training!")
     # save model and history
     history_path = os.path.join(args.weights_dir,
-                                args.model_name + "_history.pickle")
+                                f"{args.model_name}_history.pickle")
 
     import pickle
     with open(history_path, 'wb') as file_pi:
         pickle.dump(history.history, file_pi)
-    print("Saved the training history in ", history_path)
-    weights_path = os.path.join(args.weights_dir, args.model_name + "_weights_" + str(args.epochs) + "epochs.h5")
+    print(f"Saved the training history in {history_path}")
+    weights_name = f"{args.model_name}_weights_{args.epochs}.epochs.h5"
+    weights_path = os.path.join(args.weights_dir, weights_name)
     model.save(weights_path)
-    print("Saved the weights in ", weights_path)
+    print(f"Saved the weights in {weights_path}")

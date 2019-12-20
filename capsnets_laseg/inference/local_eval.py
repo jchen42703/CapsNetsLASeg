@@ -64,7 +64,7 @@ def pred_data_2D_per_sample(model, x_dir, y_dir, fnames, pad_shape=(256, 320),
         reshaped_x = np.expand_dims(reshape(preprocessed_x, preprocessed_x.min(),
                                     new_shape=_pad_shape), -1)
         # prediction
-        print("Predicting: ", id)
+        print(f"Predicting: {id}")
         predicted = model.predict(reshaped_x, batch_size=batch_size)
         # inferring that the model has a reconstruction decoder based on the outputted predictions
         if isinstance(predicted, (list, tuple)):
@@ -130,7 +130,7 @@ def evaluate_2D(y, pred):
     precision, recall, dice, _ = precision_recall_fscore_support(y.flatten(),
                                                                  pred.flatten(),
                                                                  average='binary')
-    print("Precision: ", precision, "\nRecall: ", recall, "\nDice: ", dice)
+    print(f"Precision: {precision}\nRecall: {recall}, Dice: {dice}")
     return (precision, recall, dice)
 
 def load_raw_data(x_dir, y_dir, fnames):

@@ -73,7 +73,7 @@ class Transformed2DGenerator(BaseTransformGenerator):
         # file names
         max_n_idx = (idx + 1) * self.batch_size
         if max_n_idx > self.indexes.size:
-            print("Adjusting for idx: ", idx)
+            print(f"Adjusting for idx: {idx}")
             self.adjust_indexes(max_n_idx)
 
         indexes = self.indexes[idx*self.batch_size:(idx+1)*self.batch_size]
