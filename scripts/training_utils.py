@@ -3,7 +3,7 @@ from batchgenerators.transforms import MirrorTransform, SpatialTransform, \
                                        Compose
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, EarlyStopping, \
-                            ReduceLROnPlateau, CSVLogger
+                            ReduceLROnPlateau, CSVLogger, TensorBoard
 
 from capsnets_laseg.io import Transformed2DGenerator
 from capsnets_laseg.models import U_CapsNet, CapsNetR3, AdaptiveUNet, \
@@ -121,7 +121,8 @@ def get_model(model_name, lr=3e-5, input_shape=(256, 320, 1), decoder=False,
         return train_model
 
 def get_callbacks(model_name, checkpoint_dir="/content/checkpoint.h5",
-                  decoder=False, csvlogger_fpath=None):
+                  decoder=False, csvlogger_fpath=None,
+                  tensorboard_logdir=None):
     """
     Returns a list of callbacks.
     Args:
@@ -166,6 +167,9 @@ def get_callbacks(model_name, checkpoint_dir="/content/checkpoint.h5",
     if csvlogger is not None:
         csvlogger = CSVLogger(csvlogger_fpath, append=True)
         callbacks.append(csvlogger)
+    if tensorboard_logdir is not None:
+        tensorboard = TensorBoard(tensorboard_logdir)
+        callbacks.append(tensorboard)
     return callbacks
 
 def get_list_IDs(data_dir, splits = [0.6, 0.2, 0.2]):
@@ -183,8 +187,8 @@ def get_list_IDs(data_dir, splits = [0.6, 0.2, 0.2]):
     total = len(id_list)
     train = round(total * splits[0])
     val_split = round(total * splits[1]) + train
-    return {"train": id_list[:train], "val": id_list[train:val_split], "test": id_list[val_split:]
-           }
+    return {"train": id_list[:train], "val": id_list[train:val_split],
+            "test": id_list[val_split:]}
 
 def add_bool_arg(parser, name, default=False):
     """
