@@ -31,7 +31,7 @@ def get_transforms(patch_shape=(256, 320), other_transforms=None,
         "scale": (0.75, 2.), "border_mode_data": "nearest",
         "border_cval_data": 0, "order_data": 1, "random_crop": random_crop,
         "p_el_per_sample": 0.1, "p_scale_per_sample": 0.1,
-        "p_rot_per_sample": 0.1)
+        "p_rot_per_sample": 0.1
     }
     spatial_transform = SpatialTransform(patch_shape, **spatial_params)
     mirror_transform = MirrorTransform(axes=(0,1))
@@ -164,7 +164,7 @@ def get_callbacks(model_name, checkpoint_dir="/content/checkpoint.h5",
                                min_delta=min_delta, min_lr=min_lr,
                                cooldown=cooldown)
     callbacks = [ckpoint, stop, lrplat]
-    if csvlogger is not None:
+    if csvlogger_fpath is not None:
         csvlogger = CSVLogger(csvlogger_fpath, append=True)
         callbacks.append(csvlogger)
     if tensorboard_logdir is not None:

@@ -44,7 +44,8 @@ if __name__ == "__main__":
         eval_model = train_model
     eval_model.load_weights(args.weights_path)
     # prediction
-    print(f"Predicting {len(id_dict["test"]} files")
+    n_files = len(id_dict["test"])
+    print(f"Predicting {n_files} files")
     actual_y, pred, recon, orig_images = pred_data_2D_per_sample(eval_model,
                                                                  local_train_path,
                                                                  local_label_path,
