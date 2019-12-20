@@ -2,7 +2,8 @@ import numpy as np
 from batchgenerators.transforms import MirrorTransform, SpatialTransform, \
                                        Compose
 from keras.optimizers import Adam
-from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
+from keras.callbacks import ModelCheckpoint, EarlyStopping, \
+                            ReduceLROnPlateau, CSVLogger
 
 from capsnets_laseg.io import Transformed2DGenerator
 from capsnets_laseg.models import U_CapsNet, CapsNetR3, AdaptiveUNet, \
@@ -120,7 +121,7 @@ def get_model(model_name, lr=3e-5, input_shape=(256, 320, 1), decoder=False,
         return train_model
 
 def get_callbacks(model_name, checkpoint_dir="/content/checkpoint.h5",
-                  decoder=False):
+                  decoder=False, csvlogger_fpath=None):
     """
     Returns a list of callbacks.
     Args:
@@ -162,14 +163,19 @@ def get_callbacks(model_name, checkpoint_dir="/content/checkpoint.h5",
                                min_delta=min_delta, min_lr=min_lr,
                                cooldown=cooldown)
     callbacks = [ckpoint, stop, lrplat]
+    if csvlogger is not None:
+        csvlogger = CSVLogger(csvlogger_fpath, append=True)
+        callbacks.append(csvlogger)
     return callbacks
 
 def get_list_IDs(data_dir, splits = [0.6, 0.2, 0.2]):
     """
     Divides filenames into train/val/test sets
     Args:
-        data_dir: file path to the directory of all the files; assumes labels and training images have same names
-        splits: a list with 3 elements corresponding to the decimal train/val/test splits; [train, val, test]
+        data_dir: file path to the directory of all the files; assumes labels
+            and training images have same names
+        splits: a list with 3 elements corresponding to the decimal
+            train/val/test splits; [train, val, test]
     Returns:
         a dictionary of file ids for each set
     """
