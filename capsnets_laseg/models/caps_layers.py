@@ -8,12 +8,14 @@ import numpy as np
 
 from keras import layers, models
 from keras import backend as K
-K.set_image_data_format('channels_last')
+K.set_image_data_format("channels_last")
 
 class Length(layers.Layer):
     """
-    Final layer that computes the segmentation mask of some capsule grid with one capsule of some arbitrary length
-    ** Computes length of output vectors because they represent the class probabilities
+    Final layer that computes the segmentation mask of some capsule grid with
+    one capsule of some arbitrary length
+    ** Computes length of output vectors because they represent the class
+    probabilities
     input_shape: [None, h, w, num_capsules = 1, num_dims]
     output_shape: [None, h, w, 1]
     """
@@ -28,7 +30,8 @@ class Length(layers.Layer):
 
     def call(self, inputs, **kwargs):
         if inputs.get_shape().ndims == 5:
-            assert inputs.get_shape()[-2].value == 1, 'Error: Must have num_capsules = 1 going into Length'
+            assert inputs.get_shape()[-2].value == 1, \
+                "Must have num_capsules = 1 going into Length"
             inputs = K.squeeze(inputs, axis=-2)
         # gets final result by getting the lengths of the final capsules for each pixel
         #### NOTE: USING `tf_norm` IS RISKY
@@ -43,7 +46,7 @@ class Length(layers.Layer):
             return input_shape[:-1]
 
     def get_config(self):
-        config = {'num_classes': self.num_classes, 'seg': self.seg}
+        config = {"num_classes": self.num_classes, "seg": self.seg}
         base_config = super(Length, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
@@ -71,7 +74,8 @@ class Mask(layers.Layer):
         else:
             if inputs.get_shape().ndims == 3:
                 x = K.sqrt(K.sum(K.square(inputs), -1))
-                mask = K.one_hot(indices=K.argmax(x, 1), num_classes=x.get_shape().as_list()[1])
+                mask = K.one_hot(indices=K.argmax(x, 1),
+                                 num_classes=x.get_shape().as_list()[1])
                 masked = K.batch_flatten(K.expand_dims(mask, -1) * inputs)
             else:
                 masked = inputs
@@ -91,20 +95,23 @@ class Mask(layers.Layer):
                 return input_shape
 
     def get_config(self):
-        config = {'resize_masks': self.resize_masks}
+        config = {"resize_masks": self.resize_masks}
         base_config = super(Mask, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 def update_routing(votes, biases, logit_shape, num_dims, input_dim, output_dim,
                     num_routing):
     """
-    param votes [batch_size, i_num_caps, conv_height, conv_width, num_caps, num_atoms]
-    param biases_replicated [conv_height, conv_width, num_caps, num_atoms]
-    param logit_shape [batch_size, i_num_caps, conv_height, conv_width, num_caps]
-
-    returns:
-    the final tensor from activations [conv_height, conv_width, num_atoms, num_caps]
-
+    Args:
+        votes: votes matrix
+            [batch_size, i_num_caps, conv_height, conv_width, num_caps, num_atoms]
+        biases_replicated:
+            [conv_height, conv_width, num_caps, num_atoms]
+        logit_shape:
+            [batch_size, i_num_caps, conv_height, conv_width, num_caps]
+    Returns:
+        the final tensor from activations
+            [conv_height, conv_width, num_atoms, num_caps]
     """
     if num_dims == 6:
         votes_t_shape = [5, 0, 1, 2, 3, 4]
@@ -113,7 +120,7 @@ def update_routing(votes, biases, logit_shape, num_dims, input_dim, output_dim,
         votes_t_shape = [3, 0, 1, 2]
         r_t_shape = [1, 2, 3, 0]
     else:
-        raise NotImplementedError('Not implemented')
+        raise NotImplementedError("Not implemented")
 
     # transposes the 6D matrix to [num_atoms, batch_size, i_num_caps, conv_height, conv_width, n_caps]
     votes_trans = tf.transpose(votes, votes_t_shape)
@@ -123,14 +130,17 @@ def update_routing(votes, biases, logit_shape, num_dims, input_dim, output_dim,
         """
         Routing while loop from the paper: https://arxiv.org/pdf/1804.04241.pdf
 
-        param i: tf.constant representing the iteration integer (automatically updated) for the condition in the while loop
-        param logits: routing weights [batch_size, i_num_caps, conv_height, conv_width, num_caps]
-        param activations: tensor array of resultant vectors
-
-        returns:
-        i + 1: to symbolize that one iteration has passed
-        logits: updated routing weights
-        activations: writes to the original TensorArray;  [conv_height, conv_width, num_atoms, num_caps]
+        Args:
+            i: tf.constant representing the iteration integer
+                (automatically updated) for the condition in the while loop
+            logits: routing weights
+                [batch_size, i_num_caps, conv_height, conv_width, num_caps]
+            activations: tensor array of resultant vectors
+        Returns:
+            i + 1: to symbolize that one iteration has passed
+            logits: updated routing weights
+            activations: writes to the original TensorArray
+                [conv_height, conv_width, num_atoms, num_caps]
         """
 
         # route: [batch, input_dim, output_dim, ...]
@@ -166,12 +176,14 @@ def update_routing(votes, biases, logit_shape, num_dims, input_dim, output_dim,
       loop_vars=[i, logits, activations],
       swap_memory=True)
     # returns the final resultant vector
-    return K.cast(activations.read(num_routing - 1), dtype='float32')
+    return K.cast(activations.read(num_routing - 1), dtype="float32")
 
 ####### uses dangerous norm, maybe change to a safe norm?
 def _squash(input_tensor):
     """
-    Activation that squashes capsules to lengths between 0 and 1, where more significant capsules are closer to a lenght of 1 and less significant capsules are pushed towards 0
+    Activation that squashes capsules to lengths between 0 and 1, where more
+    significant capsules are closer to a lenght of 1 and less significant
+    capsules are pushed towards 0
     * computes the raw norm; most likely need to change for a safer norm
     """
     norm = tf.norm(input_tensor, axis=-1, keepdims=True)
@@ -192,8 +204,9 @@ class ConvCapsuleLayer(layers.Layer):
     returns
     """
 
-    def __init__(self, kernel_size, num_capsule, num_atoms, strides=1, padding='same', routings=3,
-                 kernel_initializer='he_normal', **kwargs):
+    def __init__(self, kernel_size, num_capsule, num_atoms, strides=1,
+                 padding="same", routings=3,
+                 kernel_initializer="he_normal", **kwargs):
         super(ConvCapsuleLayer, self).__init__(**kwargs)
         self.kernel_size = kernel_size
         self.num_capsule = num_capsule
@@ -204,8 +217,9 @@ class ConvCapsuleLayer(layers.Layer):
         self.kernel_initializer = initializers.get(kernel_initializer)
 
     def build(self, input_shape):
-        assert len(input_shape) == 5, "The input Tensor should have shape=[None, input_height, input_width," \
-                                      " input_num_capsule, input_num_atoms]"
+        assert len(input_shape) == 5, \
+            "The input Tensor should have shape=[None, input_height, "+ \
+            "input_width, input_num_capsule, input_num_atoms]" \
         self.input_height = input_shape[1]
         self.input_width = input_shape[2]
         self.input_num_capsule = input_shape[3]
@@ -214,13 +228,14 @@ class ConvCapsuleLayer(layers.Layer):
         # Transform matrix
         # shape (x, y, input_n_atoms, n_capsules*n_atoms)
         self.W = self.add_weight(shape=[self.kernel_size, self.kernel_size,
-                                        self.input_num_atoms, self.num_capsule * self.num_atoms],
+                                        self.input_num_atoms,
+                                        self.num_capsule * self.num_atoms],
                                  initializer=self.kernel_initializer,
-                                 name='W')
+                                 name="W")
 
         self.b = self.add_weight(shape=[1, 1, self.num_capsule, self.num_atoms],
                                  initializer=initializers.constant(0.1),
-                                 name='b')
+                                 name="b")
 
         self.built = True
 
@@ -231,27 +246,31 @@ class ConvCapsuleLayer(layers.Layer):
         input_shape = K.shape(input_transposed)
         # n_capsules multiplied with n_samples
         input_tensor_reshaped = K.reshape(input_transposed, [
-            input_shape[0] * input_shape[1], self.input_height, self.input_width, self.input_num_atoms])
+                                          input_shape[0] * input_shape[1],
+                                          self.input_height, self.input_width,
+                                          self.input_num_atoms])
 
         input_tensor_reshaped.set_shape(
             (None, self.input_height, self.input_width, self.input_num_atoms))
-        conv = K.conv2d(input_tensor_reshaped, self.W, (self.strides, self.strides),
-                        padding=self.padding, data_format='channels_last')
+        conv = K.conv2d(input_tensor_reshaped, self.W,
+                        (self.strides, self.strides),
+                        padding=self.padding, data_format="channels_last")
 
         # shape of the routing coefficients?
         votes_shape = K.shape(conv)  # shape [None, h, w, input_n_capsules]
         _, conv_height, conv_width, _ = conv.get_shape()
 
         # reshapes output to: [None, input_n_capsules h_votes,w_votes, n_capsules, input_n_atoms]
-        votes = K.reshape(conv, [input_shape[1], input_shape[0], votes_shape[1], votes_shape[2],
-                                 self.num_capsule, self.num_atoms])
-        votes.set_shape((None, self.input_num_capsule, conv_height.value, conv_width.value,
-                         self.num_capsule, self.num_atoms))
+        votes = K.reshape(conv, [input_shape[1], input_shape[0], votes_shape[1],
+                                 votes_shape[2], self.num_capsule,
+                                 self.num_atoms])
+        votes.set_shape((None, self.input_num_capsule, conv_height.value,
+                         conv_width.value, self.num_capsule, self.num_atoms))
 
-        logit_shape = K.stack([
-            input_shape[1], input_shape[0], votes_shape[1], votes_shape[2], self.num_capsule])
-        biases_replicated = K.tile(
-            self.b, [conv_height.value, conv_width.value, 1, 1])
+        logit_shape = K.stack([input_shape[1], input_shape[0], votes_shape[1],
+                               votes_shape[2], self.num_capsule])
+        biases_replicated = K.tile(self.b,
+                                   [conv_height.value, conv_width.value, 1, 1])
 
         activations = update_routing(
             votes=votes,
@@ -280,20 +299,21 @@ class ConvCapsuleLayer(layers.Layer):
 
     def get_config(self):
         config = {
-            'kernel_size': self.kernel_size,
-            'num_capsule': self.num_capsule,
-            'num_atoms': self.num_atoms,
-            'strides': self.strides,
-            'padding': self.padding,
-            'routings': self.routings,
-            'kernel_initializer': initializers.serialize(self.kernel_initializer)
+            "kernel_size": self.kernel_size,
+            "num_capsule": self.num_capsule,
+            "num_atoms": self.num_atoms,
+            "strides": self.strides,
+            "padding": self.padding,
+            "routings": self.routings,
+            "kernel_initializer": initializers.serialize(self.kernel_initializer)
         }
         base_config = super(ConvCapsuleLayer, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 class DeconvCapsuleLayer(layers.Layer):
-    def __init__(self, kernel_size, num_capsule, num_atoms, scaling=2, upsamp_type='deconv', padding='same', routings=3,
-                 kernel_initializer='he_normal', **kwargs):
+    def __init__(self, kernel_size, num_capsule, num_atoms, scaling=2,
+                 upsamp_type="deconv", padding="same", routings=3,
+                 kernel_initializer="he_normal", **kwargs):
         super(DeconvCapsuleLayer, self).__init__(**kwargs)
         self.kernel_size = kernel_size
         self.num_capsule = num_capsule
@@ -305,34 +325,36 @@ class DeconvCapsuleLayer(layers.Layer):
         self.kernel_initializer = initializers.get(kernel_initializer)
 
     def build(self, input_shape):
-        assert len(input_shape) == 5, "The input Tensor should have shape=[None, input_height, input_width," \
-                                      " input_num_capsule, input_num_atoms]"
+        assert len(input_shape) == 5, \
+            "The input Tensor should have shape=[None, input_height, " + \
+            "input_width, input_num_capsule, input_num_atoms]"
         self.input_height = input_shape[1]
         self.input_width = input_shape[2]
         self.input_num_capsule = input_shape[3]
         self.input_num_atoms = input_shape[4]
 
         # Transform matrix
-        if self.upsamp_type == 'subpix':
+        if self.upsamp_type == "subpix":
             self.W = self.add_weight(shape=[self.kernel_size, self.kernel_size,
                                             self.input_num_atoms,
                                             self.num_capsule * self.num_atoms * self.scaling * self.scaling],
                                      initializer=self.kernel_initializer,
-                                     name='W')
-        elif self.upsamp_type == 'resize':
+                                     name="W")
+        elif self.upsamp_type == "resize":
             self.W = self.add_weight(shape=[self.kernel_size, self.kernel_size,
                                      self.input_num_atoms, self.num_capsule * self.num_atoms],
-                                     initializer=self.kernel_initializer, name='W')
-        elif self.upsamp_type == 'deconv':
+                                     initializer=self.kernel_initializer, name="W")
+        elif self.upsamp_type == "deconv":
             self.W = self.add_weight(shape=[self.kernel_size, self.kernel_size,
                                             self.num_capsule * self.num_atoms, self.input_num_atoms],
-                                     initializer=self.kernel_initializer, name='W')
+                                     initializer=self.kernel_initializer, name="W")
         else:
-            raise NotImplementedError('Upsampling must be one of: "deconv", "resize", or "subpix"')
+            raise NotImplementedError("Upsampling must be one of: 'deconv', ",
+                                      "'resize', or 'subpix'")
 
         self.b = self.add_weight(shape=[1, 1, self.num_capsule, self.num_atoms],
                                  initializer=initializers.constant(0.1),
-                                 name='b')
+                                 name="b")
 
         self.built = True
 
@@ -340,38 +362,51 @@ class DeconvCapsuleLayer(layers.Layer):
         input_transposed = tf.transpose(input_tensor, [3, 0, 1, 2, 4])
         input_shape = K.shape(input_transposed)
         input_tensor_reshaped = K.reshape(input_transposed, [
-            input_shape[1] * input_shape[0], self.input_height, self.input_width, self.input_num_atoms])
-        input_tensor_reshaped.set_shape((None, self.input_height, self.input_width, self.input_num_atoms))
+                                          input_shape[1] * input_shape[0],
+                                          self.input_height, self.input_width,
+                                          self.input_num_atoms])
+        input_tensor_reshaped.set_shape((None, self.input_height,
+                                        self.input_width,
+                                        self.input_num_atoms))
 
 
-        if self.upsamp_type == 'resize':
-            upsamp = K.resize_images(input_tensor_reshaped, self.scaling, self.scaling, 'channels_last')
-            outputs = K.conv2d(upsamp, kernel=self.W, strides=(1, 1), padding=self.padding, data_format='channels_last')
-        elif self.upsamp_type == 'subpix':
-            conv = K.conv2d(input_tensor_reshaped, kernel=self.W, strides=(1, 1), padding='same',
-                            data_format='channels_last')
+        if self.upsamp_type == "resize":
+            upsamp = K.resize_images(input_tensor_reshaped, self.scaling,
+                                     self.scaling, "channels_last")
+            outputs = K.conv2d(upsamp, kernel=self.W, strides=(1, 1),
+                               padding=self.padding,
+                               data_format="channels_last")
+        elif self.upsamp_type == "subpix":
+            conv = K.conv2d(input_tensor_reshaped, kernel=self.W,
+                            strides=(1, 1), padding="same",
+                            data_format="channels_last")
             outputs = tf.depth_to_space(conv, self.scaling)
         else:
             batch_size = input_shape[1] * input_shape[0]
 
             # Infer the dynamic output shape:
-            out_height = deconv_length(self.input_height, self.scaling, self.kernel_size, self.padding, None)
-            out_width = deconv_length(self.input_width, self.scaling, self.kernel_size, self.padding, None)
-            output_shape = (batch_size, out_height, out_width, self.num_capsule * self.num_atoms)
+            out_height = deconv_length(self.input_height, self.scaling,
+                                       self.kernel_size, self.padding, None)
+            out_width = deconv_length(self.input_width, self.scaling,
+                                      self.kernel_size, self.padding, None)
+            output_shape = (batch_size, out_height, out_width,
+                            self.num_capsule * self.num_atoms)
 
-            outputs = K.conv2d_transpose(input_tensor_reshaped, self.W, output_shape, (self.scaling, self.scaling),
-                                     padding=self.padding, data_format='channels_last')
+            outputs = K.conv2d_transpose(input_tensor_reshaped, self.W,
+                                         output_shape, (self.scaling, self.scaling),
+                                         padding=self.padding,
+                                         data_format="channels_last")
 
         votes_shape = K.shape(outputs)
         _, conv_height, conv_width, _ = outputs.get_shape()
 
         votes = K.reshape(outputs, [input_shape[1], input_shape[0], votes_shape[1], votes_shape[2],
                                  self.num_capsule, self.num_atoms])
-        votes.set_shape((None, self.input_num_capsule, conv_height.value, conv_width.value,
-                         self.num_capsule, self.num_atoms))
+        votes.set_shape((None, self.input_num_capsule, conv_height.value,
+                         conv_width.value, self.num_capsule, self.num_atoms))
 
-        logit_shape = K.stack([
-            input_shape[1], input_shape[0], votes_shape[1], votes_shape[2], self.num_capsule])
+        logit_shape = K.stack([input_shape[1], input_shape[0], votes_shape[1],
+                               votes_shape[2], self.num_capsule])
         biases_replicated = K.tile(self.b, [votes_shape[1], votes_shape[2], 1, 1])
 
         activations = update_routing(
@@ -388,8 +423,10 @@ class DeconvCapsuleLayer(layers.Layer):
     def compute_output_shape(self, input_shape):
         output_shape = list(input_shape)
 
-        output_shape[1] = deconv_length(output_shape[1], self.scaling, self.kernel_size, self.padding, None)
-        output_shape[2] = deconv_length(output_shape[2], self.scaling, self.kernel_size, self.padding, None)
+        output_shape[1] = deconv_length(output_shape[1], self.scaling,
+                                        self.kernel_size, self.padding, None)
+        output_shape[2] = deconv_length(output_shape[2], self.scaling,
+                                        self.kernel_size, self.padding, None)
         output_shape[3] = self.num_capsule
         output_shape[4] = self.num_atoms
 
@@ -397,14 +434,14 @@ class DeconvCapsuleLayer(layers.Layer):
 
     def get_config(self):
         config = {
-            'kernel_size': self.kernel_size,
-            'num_capsule': self.num_capsule,
-            'num_atoms': self.num_atoms,
-            'scaling': self.scaling,
-            'padding': self.padding,
-            'upsamp_type': self.upsamp_type,
-            'routings': self.routings,
-            'kernel_initializer': initializers.serialize(self.kernel_initializer)
+            "kernel_size": self.kernel_size,
+            "num_capsule": self.num_capsule,
+            "num_atoms": self.num_atoms,
+            "scaling": self.scaling,
+            "padding": self.padding,
+            "upsamp_type": self.upsamp_type,
+            "routings": self.routings,
+            "kernel_initializer": initializers.serialize(self.kernel_initializer)
         }
         base_config = super(DeconvCapsuleLayer, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))

@@ -1,4 +1,5 @@
-from keras_med_io.utils.shape_io import reshape, resample_array, extract_nonint_region
+from keras_med_io.utils.shape_io import reshape, resample_array, \
+                                        extract_nonint_region
 from capsnets_laseg.io.io_utils import *
 import json
 import os
@@ -10,7 +11,8 @@ class LocalPreprocessingBinarySeg(object):
     """
     Preprocessing for only binary segmentation tasks from the MSDs
     """
-    def __init__(self, task_path, output_path, mean_patient_shape = (115, 320, 232)):
+    def __init__(self, task_path, output_path,
+                 mean_patient_shape=(115, 320, 232)):
         self.task_path = task_path
         self.output_path = output_path
         self.mean_patient_shape = mean_patient_shape
@@ -21,8 +23,8 @@ class LocalPreprocessingBinarySeg(object):
 
     def scan_metadata(self):
         """
-        Checking which modalities the input has (CT/No CT) and whether the dataset is
-        compatible with this class (binary).
+        Checking which modalities the input has (CT/No CT) and whether the
+        dataset is compatible with this class (binary).
         """
         # Automatically checking if the task is a CT dataset or not
         json_path = join(self.task_path, "dataset.json")
@@ -39,7 +41,8 @@ class LocalPreprocessingBinarySeg(object):
         """
         Generates and saves preprocessed data
         Args:
-            task_path: file path to the task directory (must have the corresponding "dataset.json" in it)
+            task_path: file path to the task directory (must have the
+            corresponding "dataset.json" in it)
         Returns:
             preprocessed input image and mask
         """
@@ -50,8 +53,12 @@ class LocalPreprocessingBinarySeg(object):
         for id in data_ids:
             image, label = nib.load(join(images_path, id)), nib.load(join(labels_path, id))
             orig_spacing = image.header['pixdim'][1:4]
-            preprocessed_img, preprocessed_label = isensee_preprocess(image, label, orig_spacing, get_coords = False, ct = self.ct, \
-                                              mean_patient_shape = self.mean_patient_shape)
+            preprocessed_img, preprocessed_label = isensee_preprocess(image,
+                                                                      label,
+                                                                      orig_spacing,
+                                                                      get_coords=False,
+                                                                      ct=self.ct,
+                                                                      mean_patient_shape=self.mean_patient_shape)
             out_fnames = self.save_imgs(preprocessed_img, preprocessed_label, id)
             print(out_fnames)
 

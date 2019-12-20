@@ -7,31 +7,31 @@ from training_utils import get_model, get_transforms, get_callbacks, get_generat
 if __name__ == "__main__":
     # parsing the arguments from the command prompt
     parser = argparse.ArgumentParser(description="For training on Task 2 of the Medical Segmentation Decathlon using Capsule Networks and CNNs")
-    parser.add_argument("--weights_dir", type = str, required = True,
-                        help = "Path to the base directory where you want to save your weights")
-    parser.add_argument("--dset_path", type = str, required = True,
-                        help = "Path to the base directory where the preprocessed imagesTr and labelsTr directory are (./Preprocessed_Heart).")
-    parser.add_argument("--model_name", type = str, required = True,
-                        help = "Name of the model you want to train: `cnn`, `capsr3`, `ucapsr3`, or `cnn-simple`")
-    add_bool_arg(parser, "decoder", default = False) # defaults to extract = True
-    parser.add_argument("--epochs", type = int, required = True,
-                        help = "Number of epochs")
-    parser.add_argument("--batch_size", type = int, required = False, default = 2,
-                        help = "Batch size for the CNN should be 17 and for the Capsule Network, it should be 2.")
-    parser.add_argument("--n_pos", type = int, required = False, default = 1,
-                        help = "Try to make this 1/3 of the batch size (exception for the Capsule Network because its batch size is too small.)")
-    parser.add_argument("--lr", type = float, required = False, default = 3e-5,
-                        help = "The learning rate")
-    parser.add_argument("--steps_per_epoch", type = int, required = False, default = 1536,
-                        help = "Number of batches per epoch.")
-    parser.add_argument("--fold_json_path", type = str, required = False, default = "",
-                        help = "Path to the json with the filenames split. If this is not specified, the json will be created in 'weights_dir.'")
-    parser.add_argument("--weights_name", type = str, required = False, default = "",
-                        help = "Name of the h5 file you want to load the weights from.")
-    parser.add_argument("--initial_epoch", type = int, required = False, default = 0,
-                        help = "The initial epoch for training.")
-    parser.add_argument("--max_queue_size", type = int, required = False, default = 20,
-                        help = "Max queue size for training.")
+    parser.add_argument("--weights_dir", type=str, required=True,
+                        help="Path to the base directory where you want to save your weights")
+    parser.add_argument("--dset_path", type=str, required=True,
+                        help="Path to the base directory where the preprocessed imagesTr and labelsTr directory are (./Preprocessed_Heart).")
+    parser.add_argument("--model_name", type=str, required=True,
+                        help="Name of the model you want to train: `cnn`, `capsr3`, `ucapsr3`, or `cnn-simple`")
+    add_bool_arg(parser, "decoder", default=False) # defaults to extract=True
+    parser.add_argument("--epochs", type=int, required=True,
+                        help="Number of epochs")
+    parser.add_argument("--batch_size", type=int, required=False, default=2,
+                        help="Batch size for the CNN should be 17 and for the Capsule Network, it should be 2.")
+    parser.add_argument("--n_pos", type=int, required=False, default=1,
+                        help="Try to make this 1/3 of the batch size (exception for the Capsule Network because its batch size is too small.)")
+    parser.add_argument("--lr", type=float, required=False, default=3e-5,
+                        help="The learning rate")
+    parser.add_argument("--steps_per_epoch", type=int, required=False, default=1536,
+                        help="Number of batches per epoch.")
+    parser.add_argument("--fold_json_path", type=str, required=False, default="",
+                        help="Path to the json with the filenames split. If this is not specified, the json will be created in 'weights_dir.'")
+    parser.add_argument("--weights_name", type=str, required=False, default="",
+                        help="Name of the h5 file you want to load the weights from.")
+    parser.add_argument("--initial_epoch", type=int, required=False, default=0,
+                        help="The initial epoch for training.")
+    parser.add_argument("--max_queue_size", type=int, required=False, default=20,
+                        help="Max queue size for training.")
     args = parser.parse_args()
     # Setting up the initial filenames and path
     data_dirs = [os.path.join(args.dset_path, "imagesTr"), os.path.join(args.dset_path, "labelsTr")]
@@ -39,7 +39,8 @@ if __name__ == "__main__":
         print("Creating the fold...60/20/20 split")
         from keras_med_io.utils.misc_utils import get_list_IDs
         id_dict = get_list_IDs(data_dirs[0])
-        args.fold_json_path = os.path.join(args.weights_dir, args.model_name + "_fold1.json")
+        args.fold_json_path = os.path.join(args.weights_dir,
+                                           args.model_name + "_fold1.json")
         print("Saving the fold in: ", args.fold_json_path)
         # Saving current fold as a json
         with open(args.fold_json_path, 'w') as fp:
@@ -50,9 +51,14 @@ if __name__ == "__main__":
 
     # create generators, callbacks, and model
     transform = get_transforms()
-    gen, gen_val = get_generators(id_dict, data_dirs, args.batch_size, args.n_pos, transform, steps = args.steps_per_epoch, pos_mask = args.decoder)
-    model = get_model(args.model_name, args.lr, decoder = args.decoder)
-    callbacks = get_callbacks(args.model_name, os.path.join(args.weights_dir, "checkpoint.h5"), args.decoder)
+    gen, gen_val = get_generators(id_dict, data_dirs, args.batch_size,
+                                  args.n_pos, transform,
+                                  steps=args.steps_per_epoch,
+                                  pos_mask=args.decoder)
+    model = get_model(args.model_name, args.lr, decoder=args.decoder)
+    callbacks = get_callbacks(args.model_name,
+                              os.path.join(args.weights_dir, "checkpoint.h5"),
+                              args.decoder)
     # checking if to load weights or not
     weights_path = os.path.join(args.weights_dir, args.weights_name)
     if args.weights_name != "" and os.path.exists(weights_path):
@@ -61,12 +67,17 @@ if __name__ == "__main__":
     # training
     # feel free to change the settings here if you want to
     print("Starting training...")
-    history = model.fit_generator(generator = gen, steps_per_epoch = len(gen), epochs = args.epochs, callbacks = callbacks, validation_data = gen_val,
-                                  validation_steps = len(gen_val), max_queue_size = args.max_queue_size, workers = 1, use_multiprocessing = False,
-                                  initial_epoch = args.initial_epoch)
+    history = model.fit_generator(generator=gen, steps_per_epoch=len(gen),
+                                  epochs=args.epochs, callbacks=callbacks,
+                                  validation_data=gen_val,
+                                  validation_steps=len(gen_val),
+                                  max_queue_size=args.max_queue_size,
+                                  workers=1, use_multiprocessing=False,
+                                  initial_epoch=args.initial_epoch)
     print("Finished training!")
     # save model and history
-    history_path = os.path.join(args.weights_dir, args.model_name + "_history.pickle")
+    history_path = os.path.join(args.weights_dir,
+                                args.model_name + "_history.pickle")
 
     import pickle
     with open(history_path, 'wb') as file_pi:

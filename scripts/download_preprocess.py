@@ -5,7 +5,7 @@ import argparse
 from capsnets_laseg.io.io import LocalPreprocessingBinarySeg
 import glob
 
-def dload_heart(dset_path = '/content/'):
+def dload_heart(dset_path='/content/'):
     """
     Args:
         dset_path: where you want to save the dataset
@@ -16,10 +16,12 @@ def dload_heart(dset_path = '/content/'):
     download_dataset(dset_path, dataset, id)
     return
 
-def download_dataset(dset_path, dataset, id='1wEB2I6S6tQBVEPxir8cA5kFB8gTQadYY'):
+def download_dataset(dset_path, dataset,
+                     id='1wEB2I6S6tQBVEPxir8cA5kFB8gTQadYY'):
     """
     Args:
-        dset_path: where you want to save the dataset (doesn't include the name)
+        dset_path: where you want to save the dataset
+            (doesn't include the name)
         dataset: Dataset name
     """
     tar_path = os.path.join(dset_path, dataset) + '.tar'
@@ -39,17 +41,17 @@ def download_dataset(dset_path, dataset, id='1wEB2I6S6tQBVEPxir8cA5kFB8gTQadYY')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="For downloading and preprocessing the dataset.")
-    parser.add_argument("--dset_path", type = str, required = True,
-                        help = "Path to the base directory where you want to save your dataset (Doesn't include the dataset name)")
-    parser.add_argument("--output_path", type = str, required = True,
-                        help = "Path to the base directory where you want to save your preprocessed dataset (Doesn't include the dataset name)")
+    parser.add_argument("--dset_path", type=str, required=True,
+                        help="Path to the base directory where you want to save your dataset (Doesn't include the dataset name)")
+    parser.add_argument("--output_path", type=str, required=True,
+                        help="Path to the base directory where you want to save your preprocessed dataset (Doesn't include the dataset name)")
     args = parser.parse_args()
     input_dir = os.path.join(args.dset_path, "Task02_Heart")
     output_dir = os.path.join(args.output_path, "Preprocessed_Heart")
     print("Input Directory: ", input_dir, "\nOutput Directory: ", output_dir)
     # Downloading the dataset if it's not already downloaded
     if not os.path.isdir(input_dir):
-        dload_heart(dset_path = args.dset_path)
+        dload_heart(dset_path=args.dset_path)
     preprocess = LocalPreprocessingBinarySeg(input_dir, output_dir)
     # removing the weird files that start with .__
     training_dir, labels_dir = os.path.join(input_dir, 'imagesTr'), os.path.join(input_dir, 'labelsTr')

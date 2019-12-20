@@ -7,7 +7,8 @@ import os
 
 class Transformed2DGenerator(BaseTransformGenerator):
     """
-    Loads data, slices them based on the number of positive slice indices and applies data augmentation with `batchgenerators.transforms`.
+    Loads data, slices them based on the number of positive slice indices and
+    applies data augmentation with `batchgenerators.transforms`.
     * Supports channels_last
     * .nii files should not have the batch_size dimension
     Attributes:
@@ -15,9 +16,12 @@ class Transformed2DGenerator(BaseTransformGenerator):
         data_dirs: list of paths to both the input dir and labels dir
         batch_size: The number of images you want in a single batch
         n_pos: The number of positive class 2D images to include in a batch
-        transform (Transform instance): If you want to use multiple Transforms, use the Compose Transform.
-        max_patient_shape (tuple): representing the maximum patient shape in a dataset; i.e. ((z,)x,y)
-            * Note: If you have 3D medical images and want 2D slices and don't want to overpad the slice dimension (z),
+        transform (Transform instance): If you want to use multiple Transforms,
+            use the Compose Transform.
+        max_patient_shape (tuple): representing the maximum patient shape in
+            a dataset; i.e. ((z,)x,y)
+            * Note: If you have 3D medical images and want 2D slices and don't
+            want to overpad the slice dimension (z),
             provide a shape that is only 2D (x,y).
         step_per_epoch:
         pos_mask: boolean representing whether or not output the positive masks (X*Y)
@@ -25,20 +29,26 @@ class Transformed2DGenerator(BaseTransformGenerator):
             * If False, inputs are for everything else.
         shuffle: boolean
     """
-    def __init__(self, list_IDs, data_dirs, batch_size = 2, n_pos = 1,
-                transform = None, max_patient_shape = (256, 320), steps_per_epoch = 1536, pos_mask = True, shuffle = True):
+    def __init__(self, list_IDs, data_dirs, batch_size=2, n_pos=1,
+                 transform=None, max_patient_shape=(256, 320),
+                 steps_per_epoch=1536, pos_mask=True, shuffle=True):
 
-        BaseTransformGenerator.__init__(self, list_IDs = list_IDs, data_dirs = data_dirs, batch_size = batch_size,
-                               n_channels = 1, n_classes = 1, ndim = 2,
-                               transform = transform, max_patient_shape = max_patient_shape,
-                               steps_per_epoch = steps_per_epoch, shuffle = shuffle)
+        BaseTransformGenerator.__init__(self, list_IDs=list_IDs,
+                                        data_dirs=data_dirs,
+                                        batch_size=batch_size,
+                                        n_channels=1, n_classes=1, ndim=2,
+                                        transform=transform,
+                                        max_patient_shape=max_patient_shape,
+                                        steps_per_epoch=steps_per_epoch,
+                                        shuffle=shuffle)
         self.n_pos = n_pos
         self.pos_mask = pos_mask
         if n_pos == 0:
             print("WARNING! Your data is going to be randomly sliced.")
             self.mode = "rand"
         elif n_pos == batch_size:
-            print("WARNING! Your entire batch is going to be positively sampled.")
+            print("WARNING! Your entire batch is going to be",
+                  "positively sampled.")
             self.mode = "pos"
         else:
             self.mode = "bal"
@@ -53,9 +63,11 @@ class Transformed2DGenerator(BaseTransformGenerator):
             idx: the id assigned to each worker
         Returns:
         if self.pos_mask is True:
-            (X,Y): a batch of transformed data/labels based on the n_pos attribute.
+            (X,Y): a batch of transformed data/labels based on the n_pos
+            attribute.
         elif self.pos_mask is False:
-            ([X, Y], [Y, pos_mask]): multi-inputs for the capsule network decoder
+            ([X, Y], [Y, pos_mask]): multi-inputs for the capsule network
+            decoder
         """
         # file names
         max_n_idx = (idx + 1) * self.batch_size
@@ -69,24 +81,27 @@ class Transformed2DGenerator(BaseTransformGenerator):
         # balanced sampling
         if self.mode == "bal":
             # generating data for both positive and randomly sampled data
-            X_pos, Y_pos = self.data_gen(list_IDs_temp[:self.n_pos], pos_sample = True)
-            X_rand, Y_rand = self.data_gen(list_IDs_temp[self.n_pos:], pos_sample = False)
+            X_pos, Y_pos = self.data_gen(list_IDs_temp[:self.n_pos],
+                                         pos_sample=True)
+            X_rand, Y_rand = self.data_gen(list_IDs_temp[self.n_pos:],
+                                           pos_sample=False)
             # concatenating all the corresponding data
-            X, Y = np.concatenate([X_pos, X_rand], axis = 0), np.concatenate([Y_pos, Y_rand], axis = 0)
+            X, Y = np.concatenate([X_pos, X_rand], axis=0), np.concatenate([Y_pos, Y_rand], axis=0)
             # shuffling the order of the positive/random patches
             out_rand_indices = np.arange(0, X.shape[0])
             np.random.shuffle(out_rand_indices)
             X, Y = X[out_rand_indices], Y[out_rand_indices]
         # random sampling
         elif self.mode == "rand":
-            X, Y = self.data_gen(list_IDs_temp, pos_sample = False)
+            X, Y = self.data_gen(list_IDs_temp, pos_sample=False)
         elif self.mode == "pos":
-            X, Y = self.data_gen(list_IDs_temp, pos_sample = True)
+            X, Y = self.data_gen(list_IDs_temp, pos_sample=True)
         # data augmentation
         if self.transform is not None:
             X, Y = self.apply_transform(X, Y)
         # print("Getting item of size: ", indexes.size, "out of ", self.indexes.size, "with idx: ", idx, "\nX shape: ", X.shape)
-        assert X.shape[0] == self.batch_size, "The outputted batch doesn't match the batch size."
+        assert X.shape[0] == self.batch_size, \
+            "The outputted batch doesn't match the batch size."
         if self.pos_mask:
             pos_mask = X * Y
             return ([X, Y], [Y, pos_mask])
@@ -113,7 +128,7 @@ class Transformed2DGenerator(BaseTransformGenerator):
                 pad_shape = (x_train.shape[0], ) + self.max_patient_shape
             elif not self.dynamic_padding_z:
                 pad_shape = self.max_patient_shape
-            x_train = reshape(x_train, x_train.min(), pad_shape + (self.n_channels, ))
+            x_train = reshape(x_train, x_train.min(), pad_shape + (self.n_channels,))
             y_train = reshape(y_train, 0, pad_shape + (self.n_classes, ))
             # extracting slice:
             if pos_sample:

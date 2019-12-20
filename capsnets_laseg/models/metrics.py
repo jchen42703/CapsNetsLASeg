@@ -34,7 +34,8 @@ def dice_loss(y_true, y_pred):
 def dice_hard(y_true, y_pred, threshold=0.5, axis=[1,2,3], smooth=1e-5):
     """
     Non-differentiable Sørensen–Dice coefficient for comparing the similarity
-    of two batch of data, usually be used for binary image segmentation i.e. labels are binary.
+    of two batch of data, usually be used for binary image segmentation
+    i.e. labels are binary.
     Args:
         y_pred : tensor
             A distribution with shape: [batch_size, ....], (any dimensions).
@@ -63,7 +64,8 @@ def dice_hard(y_true, y_pred, threshold=0.5, axis=[1,2,3], smooth=1e-5):
 
 def multi_class_dice(y_true, y_pred, smooth = 1e-5):
     """
-    Simple multi-class dice coefficient that computes the average dice for each class.
+    Simple multi-class dice coefficient that computes the average dice for
+    each class.
     This implementation assumes a "channels_last" tensor format.
     Args:
         y_true:
