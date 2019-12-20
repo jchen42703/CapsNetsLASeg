@@ -117,4 +117,4 @@ Use Keras if you need a deep learning library that:
 
 _Read the documentation: [Keras.io](http://keras.io/)_
 
-Keras is compatible with: Python 2.7-3.5.
+Keras is compatible with: Python 2.7-3.6.
