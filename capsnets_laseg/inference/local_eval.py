@@ -1,10 +1,10 @@
-from keras_med_io.utils.shape_io import reshape
-from keras_med_io.inference.infer_utils import pad_nonint_extraction, undo_reshape_padding
-from capsnets_laseg.io.io_utils import isensee_preprocess, nii_to_np
 from sklearn.metrics import precision_recall_fscore_support
 import nibabel as nib
 import numpy as np
 import os
+
+from capsnets_laseg.io import isensee_preprocess, nii_to_np, reshape
+from .infer_utils import pad_nonint_extraction, undo_reshape_padding
 
 def pred_data_2D_per_sample(model, x_dir, y_dir, fnames, pad_shape=(256, 320),
                             batch_size=2, mean_patient_shape=(115, 320, 232),

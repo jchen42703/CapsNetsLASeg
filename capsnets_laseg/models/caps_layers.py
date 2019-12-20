@@ -218,8 +218,8 @@ class ConvCapsuleLayer(layers.Layer):
 
     def build(self, input_shape):
         assert len(input_shape) == 5, \
-            "The input Tensor should have shape=[None, input_height, "+ \
-            "input_width, input_num_capsule, input_num_atoms]" \
+            "The input Tensor should have shape=[None, input_height, " + \
+            "input_width, input_num_capsule, input_num_atoms]"
         self.input_height = input_shape[1]
         self.input_width = input_shape[2]
         self.input_num_capsule = input_shape[3]

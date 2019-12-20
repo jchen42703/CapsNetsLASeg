@@ -1,2 +1,2 @@
-from .unet_models import AdaptiveUNet, SimpleUNet
-from .capsnets import U_CapsNet, CapsNetR3
+from .unet_models import AdaptiveUNet, SimpleUNet, U_CapsNet
+from .capsnets import CapsNetR3, CapsNetBasic
