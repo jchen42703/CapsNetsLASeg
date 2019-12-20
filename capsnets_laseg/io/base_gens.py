@@ -100,8 +100,10 @@ class BaseTransformGenerator(BaseGenerator):
         """
         Adjusts self.indexes to the length of n_idx.
         """
-        assert n_idx > self.indexes.size, "WARNING! The n_idx should be larger than the current number of indexes or else \
-                                           there's no point in using this function. It has been automatically adjusted for you."
+        assert n_idx > self.indexes.size, \
+            "WARNING! The n_idx should be larger than the current number" + \
+            " of indexes or else there's no point in using this function. " + \
+            "It has been automatically adjusted for you."
         # expanding the indexes until it passes the threshold: max_n_idx (extra will be removed later)
         while n_idx > self.indexes.size:
             self.indexes = np.repeat(self.indexes, 2)
@@ -110,7 +112,8 @@ class BaseTransformGenerator(BaseGenerator):
             self.indexes = self.indexes[:-remainder]
 
         try:
-            assert n_idx == self.indexes.size, "Expected number of indices per epoch does not match self.indexes.size."
+            assert n_idx == self.indexes.size, \
+                "Expected number of indices per epoch does not match self.indexes.size."
         except AssertionError:
             raise Exception("Please make your steps_per_epoch > 3 if your batch size is < 3.")
 
@@ -207,7 +210,7 @@ class BaseTransformGenerator(BaseGenerator):
         max_patient_shape = tuple(np.max(shapes, axis=0))
         mean_patient_shape = tuple(np.mean(shapes, axis=0))
         min_patient_shape = tuple(np.min(shapes, axis=0))
-        print(f"Max Patient Shape: {max_patient_shape},
+        print(f"Max Patient Shape: {max_patient_shape}",
               f"\nMean Patient Shape: {mean_patient_shape}",
               f"\nMin Patient Shape: {min_patient_shape}")
         # Running a quick check on a possible fail case
