@@ -83,7 +83,7 @@ if __name__ == "__main__":
     with open(history_path, 'wb') as file_pi:
         pickle.dump(history.history, file_pi)
     print(f"Saved the training history in {history_path}")
-    weights_name = f"{args.model_name}_weights_{args.epochs}.epochs.h5"
+    weights_name = f"{args.model_name}_weights_{args.epochs}epochs.h5"
     weights_path = os.path.join(args.weights_dir, weights_name)
     model.save(weights_path)
     print(f"Saved the weights in {weights_path}")
