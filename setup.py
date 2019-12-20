@@ -14,7 +14,7 @@ setup(name="capsnets_laseg",
             "scikit-image",
             "future",
             "keras==2.3.1",
-            "tensorflow==1.14.0",
+            "tensorflow==1.15.0",
             "nibabel",
             "batchgenerators==0.19.5",
             "pandas"
