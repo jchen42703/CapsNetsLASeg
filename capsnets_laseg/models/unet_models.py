@@ -8,19 +8,19 @@ from capsnets_laseg.models.capsnets import CapsNetR3, CapsNetBasic
 
 class AdaptiveUNet(model_utils.AdaptiveNetwork):
     """
-    Isensee's 2D and 3D U-Nets for Heart Segmentation from the MSD that follows the conditions:
+    Isensee's 2D U-Net for Heart Segmentation from the MSD that follows the conditions:
         * pools until the feature maps axes are all of at <= 8
-        * max # of pools = 5 for 3D and max # of pools = 6 for 2D
+        * max # of pools = 6 for 2D
     Augmented to allow for use as a feature extractor
     Attributes:
-        n_convs: number of convolutions per module
         input_shape: The shape of the input including the number of input channels; (z, x, y, n_channels)
+        n_convs: number of convolutions per module
         n_classes: number of output classes (default: 1, which is binary segmentation)
             * Make sure that it doesn't include the background class (0)
-        max_pools:
-        starting_filters:
+        max_pools: max number of max pooling layers
+        starting_filters: number of filters at the highest depth
     """
-    def __init__(self, n_convs, input_shape, n_classes = 1, max_pools = 5, starting_filters = 30):
+    def __init__(self, input_shape, n_convs = 2, n_classes = 1, max_pools = 6, starting_filters = 30,):
         super().__init__(input_shape, max_pools, starting_filters, base_pool_size = 2)
         self.n_convs = n_convs
         self.n_classes = n_classes
@@ -30,31 +30,16 @@ class AdaptiveUNet(model_utils.AdaptiveNetwork):
         # automatically reassigns the max number of pools in a model (for cases where the actual max pools < inputted one)
         self.max_pools = max(self._pool_statistics())
 
-    def _build_predictor(self, input_layer):
-        """
-        Takes a keras layer as input and returns the subsequent classifer Convolution with kernel_size = 1
-        * Activations: sigmoid for binary and softmax for multiclass
-        Args:
-            input_layer:
-        Returns:
-            conv_seg: output tensor segmentation
-        """
-        # sigmoid for binary and softmax for multiclass
-        kernel_size = tuple([1 for dim in range(self.ndim)])
-        if self.ndim == 2:
-            if self.n_classes == 1:
-                conv_seg = Conv2D(self.n_classes, kernel_size = kernel_size, activation = 'sigmoid')(input_layer)
-            elif self.n_classes > 1:
-                conv_seg = Conv2D(self.n_classes, kernel_size = kernel_size, activation = 'softmax')(input_layer)
-        return conv_seg
-
-    def build_model(self, include_top = False, input_layer = None):
+    def build_model(self, include_top = False, input_layer = None, out_act = 'sigmoid'):
         """
         Returns a keras.models.Model instance.
         Args:
+            include_top (boolean): Whether or not you want to have a segmentation layer
             input_layer: keras layer
                 * if None, then defaults to a regular input layer based on the shape
             extractor: boolean on whether or not to use the U-Net as a feature extractor or not
+            out_act: string representing the activation function for the last layer. Should be either "softmax" or "sigmoid".
+            Defaults to "sigmoid".
         """
         if input_layer is None:
             input_layer = Input(shape = self.input_shape)
@@ -80,7 +65,7 @@ class AdaptiveUNet(model_utils.AdaptiveNetwork):
                                                upsampling_size = self.pool_list[current_depth])
             level -= 1
 
-        conv_seg = self._build_predictor(upsamp)
+        conv_seg = Conv2D(self.n_classes, kernel_size = (1,1), activation = out_act)(upsamp)
         # return feature maps
         if not include_top:
             extractor = Model(inputs = [input_layer], outputs = [upsamp])
@@ -90,15 +75,22 @@ class AdaptiveUNet(model_utils.AdaptiveNetwork):
             unet = Model(inputs = [input_layer], outputs = [conv_seg])
             return unet
 
-def SimpleUNet(include_top = False, input_layer = None, input_shape = (None, None, None), starting_filters = 32, depth = 4,
-               n_convs = 2, activation = 'relu', padding = 'same'):
+def SimpleUNet(include_top = False, input_layer = None, input_shape = (None, None, None), n_labels = 1, starting_filters = 32,
+               depth = 4, n_convs = 2, activation = 'relu', padding = 'same', out_act = 'sigmoid'):
     """
     Builds a simple U-Net with batch normalization.
     Args:
-        include_top: whether to include the final sigmoid layer
+        include_top: whether to include the final segmentation layer
+        input_layer: keras layer
         input_shape: (x, y, n_channels)
-        activation:
+        n_labels: number of labels (not including the background or `0` class). For example, a binary segmentation task
+        would only have 1 label because it would only have 0 and 1 and 0 would be excluded.
+        starting_filters: number of filters at the highest depth
+        depth: Number of levels in the U-Net
+        n_convs: number of convolutions in each level
+        activation: activation function for each convolution
         padding: layer padding (default: 'same')
+        out_act: activation function for last convolutional layer
     """
     # initializing some reusable components
     context_mod = partial(model_utils.context_module_2D, n_convs = n_convs, activation = activation)
@@ -139,13 +131,8 @@ def SimpleUNet(include_top = False, input_layer = None, input_shape = (None, Non
         return extractor
     # return the segmentation
     elif include_top:
-        # inferring the number of classes
-        n_class = input_shape[-1]
         # setting activation function based on the number of classes
-        if n_class > 1: # multiclass
-            conv_seg = Conv2D(n_class, (1,1), activation = 'softmax')(conv_transition)
-        elif n_class == 1:# binary
-            conv_seg = Conv2D(1, (1,1), activation = 'sigmoid')(conv_transition)
+        conv_seg = Conv2D(n_labels, (1,1), activation = out_act)(conv_transition)
         unet = Model(inputs = [input_layer], outputs = [conv_seg])
         return unet
 
@@ -183,10 +170,9 @@ class U_CapsNet(object):
         # initializing the U-Net feature extractor
         if model_layer is None:
             adap = AdaptiveUNet(2, self.input_shape, n_classes = self.n_class - 1, max_pools = 6, starting_filters = 5)
-            model = adap.build_model(include_top = False, input_layer = x)
-            # tensor_inp = model.output
+            model = adap.build_model(include_top = False, input_layer = x, out_act = 'sigmoid')
         elif model_layer == "simple":
-            model = SimpleUNet(include_top = False, input_layer = x, input_shape = self.input_shape)
+            model = SimpleUNet(include_top = False, input_layer = x, input_shape = self.input_shape, out_act = 'sigmoid')
             # tensor_inp = simp_u.output
         else:
             model = model_layer
